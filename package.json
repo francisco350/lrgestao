@@ -1,0 +1,7 @@
+{
+  "name": "lino-gestao-demo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {"dev": "node server.cjs", "test": "node verify.cjs"},
+  "devDependencies": {"playwright": "1.62.1"}
+}

@@ -1,0 +1,7 @@
+node_modules/
+desktop-demo.png
+mobile-demo.png
+*.tar.gz
+*.tar
+.env
+.env.*
