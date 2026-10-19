@@ -1,0 +1,2 @@
+const path=require('node:path'),fs=require('node:fs');const {openStore}=require('./lib/store.cjs');
+const source=process.env.DATABASE_PATH||path.join(__dirname,'data','lino.sqlite');const dir=path.join(__dirname,'backups');fs.mkdirSync(dir,{recursive:true,mode:0o700});const destination=path.join(dir,`lino-${new Date().toISOString().replace(/[:.]/g,'-')}.sqlite`);const db=openStore(source);db.prepare('VACUUM INTO ?').run(destination);db.close();try{fs.chmodSync(destination,0o600);}catch{}console.log(`Cópia de segurança criada: ${destination}`);

@@ -8,3 +8,9 @@ versions-mobile.png
 *.tar
 .env
 .env.*
+!.env.example
+operacional/data/
+operacional/backups/
+future-login.png
+future-desktop.png
+future-mobile.png

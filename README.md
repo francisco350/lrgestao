@@ -4,7 +4,7 @@ Demonstração funcional para validar os fluxos na primeira reunião. Dados inte
 
 ## Versões
 
-A página inicial é uma seleção de versões. O protótipo preservado v0.2 abre em `prototipo/index.html#resumo`. A aplicação operacional está em planeamento e não tem ainda um ambiente próprio. Os ficheiros do protótipo ficam em `dist/prototipo/`; futuras implementações operacionais devem usar uma pasta distinta e dados separados. A seleção não altera o acesso privado do site nem implementa autenticação.
+A página inicial é uma seleção de versões. O protótipo preservado v0.2 abre em `prototipo/index.html#resumo`. A versão futura 0.3 está em `operacional/`, com servidor próprio, autenticação por utilizador/palavra-passe, SQLite persistente e permissões reais. Consulte `operacional/README.md` para execução, acessos e publicação. Funciona localmente em http://127.0.0.1:4174/app/ e ainda não está publicada online. O Sites mantém o seletor e o protótipo privados. Os dados da versão futura são independentes do protótipo.
 
 O registo de preservação está em `releases/prototipo-v0.2.json`. O guião de reunião, decisões e preparação comercial está em `PROXIMOS-PASSOS.md`.
 

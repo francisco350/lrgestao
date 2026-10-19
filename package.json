@@ -1,7 +1,8 @@
 {
   "name": "lino-gestao-demo",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "scripts": {"dev": "node server.cjs", "test": "node --test model.test.cjs", "test:browser": "node verify.cjs"},
+  "engines": {"node": ">=24.0.0"},
+  "scripts": {"dev": "node server.cjs", "test": "node --test model.test.cjs operacional/api.test.cjs", "test:browser": "node verify.cjs", "future:start": "node operacional/server.cjs", "future:seed": "node operacional/seed.cjs", "future:backup": "node operacional/backup.cjs", "future:test:browser": "node operacional/browser.test.cjs"},
   "devDependencies": {"playwright": "1.62.1"}
 }
