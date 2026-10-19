@@ -1,0 +1,9 @@
+{
+  "version": "0.2",
+  "purpose": "Protótipo de apresentação e validação comercial",
+  "base_commit": "04e724c97f1d949e934ae2c077b9170eb16cc9a1",
+  "entrypoint": "dist/prototipo/index.html",
+  "preservation_policy": "Manter os fluxos e funcionalidades desta versão. Desenvolver a aplicação operacional num diretório distinto. Não confundir os perfis simulados com autenticação real.",
+  "persistence": "localStorage no navegador; dados fictícios; chave de armazenamento anterior preservada",
+  "changes_from_base": ["Ficheiros movidos para a pasta prototipo", "Título identifica a versão 0.2", "Ligação de regresso à página de seleção"]
+}

@@ -2,9 +2,15 @@
 
 Demonstração funcional para validar os fluxos na primeira reunião. Dados inteiramente fictícios.
 
+## Versões
+
+A página inicial é uma seleção de versões. O protótipo preservado v0.2 abre em `prototipo/index.html#resumo`. A aplicação operacional está em planeamento e não tem ainda um ambiente próprio. Os ficheiros do protótipo ficam em `dist/prototipo/`; futuras implementações operacionais devem usar uma pasta distinta e dados separados. A seleção não altera o acesso privado do site nem implementa autenticação.
+
+O registo de preservação está em `releases/prototipo-v0.2.json`. O guião de reunião, decisões e preparação comercial está em `PROXIMOS-PASSOS.md`.
+
 ## Abrir localmente
 
-Com Node.js instalado, executar `node server.cjs` nesta pasta e abrir http://127.0.0.1:4173. Também é possível abrir `dist/index.html` diretamente; a persistência em URLs de ficheiro depende do navegador.
+Com Node.js instalado, executar `node server.cjs` nesta pasta e abrir http://127.0.0.1:4173. Escolher Abrir protótipo. Também é possível abrir `dist/index.html` diretamente; a persistência em URLs de ficheiro depende do navegador.
 
 ## Demonstração de 5 minutos · versão 0.2
 

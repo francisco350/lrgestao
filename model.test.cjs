@@ -1,4 +1,4 @@
-const {test}=require('node:test');const assert=require('node:assert/strict');const M=require('./dist/model.js');
+const {test}=require('node:test');const assert=require('node:assert/strict');const M=require('./dist/prototipo/model.js');
 const person={id:'e1',payBasis:'day',rate:80,dayHours:8,category:'Oficial'};
 const make=(overrides={})=>({employee:'e1',project:'o1',date:'2026-10-12',mode:'days',days:.5,note:'Trabalho',...overrides});
 const database=()=>M.migrate({employees:[{...person}],entries:[],wagePayments:[]});
