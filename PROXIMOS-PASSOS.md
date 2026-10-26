@@ -22,7 +22,7 @@ Mostrar que os fluxos essenciais podem ser adaptados ao trabalho do Lino. O prot
 - Pagamentos semanais/mensais referem-se a clientes, trabalhadores ou ambos?
 - O responsável regista dias ou cada trabalhador marca horários? Precisa de funcionar sem internet?
 - Qual o programa de faturação existente e o que deve ser transferido para ele?
-- O que o RADAR não resolve que justifique desenvolvimento à medida?
+- Que problemas do programa do programador local precisam de ser resolvidos? Quais as funções do RADAR que interessam como referência?
 - Existem dados a migrar? Quem tem acesso ao programa, código, alojamento e exportação atuais?
 - Que orçamento e disponibilidade existem para validar e experimentar o sistema?
 

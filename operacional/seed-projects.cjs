@@ -1,0 +1,3 @@
+const path=require('node:path');const {openStore,readState,mutate}=require('./lib/store.cjs');const {addDemoProjectDetails}=require('./demo-projects.cjs');
+const db=openStore(process.env.DATABASE_PATH||path.join(__dirname,'data','lino.sqlite'));
+try{const state=readState(db),user=db.prepare("SELECT id FROM users WHERE username='lino' AND role='admin' AND active=1").get();if(!user)throw Error('Administrador da demonstração não encontrado.');mutate(db,state.revision,user.id,'demo_project_details_initialized',addDemoProjectDetails);console.log('Dados fictícios de planeamento acrescentados apenas nos campos ainda inexistentes.');}finally{db.close();}

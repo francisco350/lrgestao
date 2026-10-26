@@ -37,6 +37,13 @@
   function validateWork(row,rows,exclude){
     const same=rows.filter(r=>r.id!==exclude&&r.employee===row.employee&&r.date===row.date&&r.status!=='rejected');
     if(same.reduce((s,r)=>s+r.minutes,0)+row.minutes>1440)throw Error('O total de trabalho neste dia ultrapassaria 24 horas.');
+    if(same.some(r=>{
+      if(row.mode!=='clock'&&r.mode!=='clock')return false;
+      if(row.mode==='days'||r.mode==='days')return true;
+      if(row.mode==='clock'&&r.mode==='clock')return row.segments.some(a=>r.segments.some(b=>a.start<b.end&&a.end>b.start));
+      const timed=row.mode==='clock'?row:r,manual=row.mode==='hours'?row:r;
+      return timed.clockWindows.some(([a,b])=>a<clock(manual.end)&&b>clock(manual.start));
+    }))throw Error('O trabalho sobrepõe-se a uma picagem ou a um registo por dias. Confirme os registos antes de validar.');
     if(row.mode==='hours'&&same.some(r=>r.mode==='hours'&&clock(row.start)<clock(r.end)&&clock(row.end)>clock(r.start)))throw Error('Este horário sobrepõe-se a outro registo do funcionário.');
   }
   function ledger(db,employeeId,start,end){
