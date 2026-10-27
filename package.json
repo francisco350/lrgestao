@@ -1,8 +1,25 @@
 {
   "name": "lino-gestao-demo",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "private": true,
-  "engines": {"node": ">=24.0.0"},
-  "scripts": {"dev": "node server.cjs", "test": "node --test model.test.cjs operacional/api.test.cjs operacional/costs.test.cjs operacional/attachments.test.cjs operacional/timeclock.test.cjs operacional/clock-corrections.test.cjs operacional/hours.test.cjs operacional/planning.test.cjs operacional/absences.test.cjs operacional/demo-quarter.test.cjs operacional/trial.test.cjs", "test:browser": "node verify.cjs", "future:start": "node operacional/server.cjs", "future:trial": "node operacional/trial-control.cjs", "future:seed": "node operacional/seed.cjs", "future:demo:quarter": "node operacional/seed-quarter.cjs", "future:backup": "node operacional/backup.cjs", "future:test:browser": "node operacional/browser.test.cjs"},
-  "devDependencies": {"playwright": "1.62.1"}
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "node operacional/platform.cjs",
+    "test": "node --test model.test.cjs operacional/api.test.cjs operacional/costs.test.cjs operacional/attachments.test.cjs operacional/timeclock.test.cjs operacional/clock-corrections.test.cjs operacional/hours.test.cjs operacional/planning.test.cjs operacional/absences.test.cjs operacional/demo-quarter.test.cjs operacional/trial.test.cjs operacional/overview.test.cjs operacional/companies.test.cjs",
+    "test:browser": "node verify.cjs",
+    "future:start": "node operacional/platform.cjs",
+    "future:trial": "node operacional/trial-control.cjs",
+    "future:seed": "node operacional/seed.cjs",
+    "future:demo:quarter": "node operacional/seed-quarter.cjs",
+    "future:backup": "node operacional/backup.cjs",
+    "future:test:browser": "node operacional/browser.test.cjs",
+    "start": "node operacional/platform.cjs",
+    "prototype:start": "node server.cjs",
+    "company": "node operacional/company-control.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
 }

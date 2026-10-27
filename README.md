@@ -2,15 +2,17 @@
 
 Demonstração funcional para validar os fluxos na primeira reunião. Dados inteiramente fictícios.
 
-## Versões
+## Aplicação atual — 0.14
 
-A página inicial é uma seleção de versões. O protótipo preservado v0.2 abre em `prototipo/index.html#resumo`. A versão futura 0.13 está em `operacional/`, com servidor próprio, autenticação por utilizador/palavra-passe, SQLite persistente, permissões reais, férias e indisponibilidades, planeamento semanal da equipa, picagem e correção de ponto, e mapas de horas com exportação CSV. Consulte `operacional/README.md` para execução, acessos e publicação. Funciona localmente em http://127.0.0.1:4174/app/ e ainda não está publicada online. O Sites mantém o seletor e o protótipo privados. Os dados da versão futura são independentes do protótipo.
+Executar `npm run dev` (Node.js 24+) e abrir http://127.0.0.1:4174/ . A página inicial abre diretamente o login, sem escolha de versões. Cada conta pertence a uma empresa, com dados, anexos, permissões e período de demonstração independentes. Ver [gestão de empresas](EMPRESAS.md) e [documentação operacional](operacional/README.md).
 
-O registo de preservação está em `releases/prototipo-v0.2.json`. O guião de reunião, decisões e preparação comercial está em `PROXIMOS-PASSOS.md`.
+A base local existente foi preservada. Numa instalação nova, executar primeiro `npm run future:seed` para inicializar a empresa de demonstração; as credenciais geradas são mostradas uma vez. A versão operacional ainda não está publicada online.
 
-## Abrir localmente
+## Protótipo preservado
 
-Com Node.js instalado, executar `node server.cjs` nesta pasta e abrir http://127.0.0.1:4173. Escolher Abrir protótipo. Também é possível abrir `dist/index.html` diretamente; a persistência em URLs de ficheiro depende do navegador.
+O protótipo v0.2 permanece em `dist/prototipo/`. Não é servido pela aplicação atual. Para o consultar deliberadamente, executar `npm run prototype:start` e abrir http://127.0.0.1:4173/prototipo/index.html . O registo de preservação está em `releases/prototipo-v0.2.json`.
+
+As secções seguintes descrevem exclusivamente o protótipo antigo e os seus limites; para a aplicação atual, consultar a documentação operacional.
 
 ## Demonstração de 5 minutos · versão 0.2
 

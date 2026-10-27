@@ -12,3 +12,13 @@
 .planning-stats{margin-top:22px}.planning-week{display:grid;grid-template-columns:repeat(7,minmax(170px,1fr));gap:12px;overflow-x:auto;padding:4px 0 18px}.plan-day{background:#eef2e9;border:1px solid #e0e6d8;border-radius:10px;padding:12px;min-width:0}.plan-day-heading{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}.plan-day-heading h2{font-size:13px;margin:0}.plan-card{background:#fff;border:1px solid #dce4d5;border-radius:8px;padding:13px;margin-bottom:12px;overflow-wrap:anywhere}.plan-card h3{font-size:13px;margin:12px 0 5px}.plan-card p{font-size:12px;line-height:1.6}.plan-card .plan-project{color:#477447;font-weight:600}.plan-card small{font-size:11px;color:#7a886e;line-height:1.7}.plan-time{font-size:13px;font-weight:600;display:flex;gap:6px;flex-wrap:wrap}.plan-card .row-actions{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}.plan-card .btn{padding:7px 9px;font-size:10px}.plan-cancelled{background:#f8f8f5;border-style:dashed}.plan-empty{font-size:12px;line-height:1.7;color:#79876d;margin:0}.plan-day-heading .badge{font-size:9px}@media(max-width:750px){.planning-week{grid-template-columns:1fr;overflow:visible}.plan-day{padding:16px}.plan-day-heading h2{font-size:14px}.plan-card .btn{padding:10px 12px}.plan-card .row-actions{gap:8px}}
 
 .absence-card{border:1px solid #d8bc88;background:#fff8ea;border-radius:8px;padding:13px;margin-bottom:12px;overflow-wrap:anywhere}.absence-card>span{font-size:11px;font-weight:600;color:#775625}.absence-card h3{font-size:13px;margin:10px 0 5px}.absence-card p{font-size:12px;line-height:1.6}.absence-card .btn{font-size:11px;padding:8px}.absence-time-fields{display:grid;grid-template-columns:1fr 1fr;gap:16px}.absence-time-fields[hidden]{display:none}@media(max-width:600px){.absence-time-fields{grid-template-columns:1fr}}
+
+.directory-search{display:flex;align-items:end;gap:14px;flex-wrap:wrap;padding:0 22px 20px}
+.directory-search .field{flex:1 1 280px;max-width:520px;min-width:0}
+.directory-search input{min-height:42px}
+.directory-search .btn{min-height:42px}
+.directory-search .btn:disabled{cursor:default;opacity:.5}
+.directory-count{font-size:11px;color:var(--muted);padding-bottom:13px;margin-left:auto}
+@media(max-width:650px){.directory-search{padding:0 16px 18px;gap:10px}.directory-search .field{flex-basis:100%;max-width:none}.directory-count{padding-bottom:12px}}
+
+.brand>span:last-child{min-width:0;overflow-wrap:anywhere;letter-spacing:.2px}.sidebar .brand{font-size:14px;gap:10px;line-height:1.4}.brand-icon{flex-shrink:0}.account-actions{flex-wrap:wrap}.profile-card a{font-weight:600}

@@ -1,0 +1,30 @@
+'use strict';
+let overviewFilter='all',overviewLimit=12,overviewOwner;
+const overviewKinds={trabalho:'Trabalho e ponto',pagamentos:'Pagamentos à equipa',recebimentos:'Recebimentos',cobrancas:'Cobranças',custos:'Materiais e despesas',obras:'Obras',clientes:'Clientes',equipa:'Equipa'};
+function overviewTypes(){return ['trabalho',...(current.role!=='manager'?['pagamentos']:[]),...(admin()?['recebimentos','cobrancas','custos','clientes','equipa']:[]),'obras'];}
+function overviewRows(){return LinoOverview.activity(state,current.role).filter(r=>overviewFilter==='all'||r.kind===overviewFilter);}
+function overviewHistoryBody(){
+  const rows=overviewRows();
+  const dateLabel=r=>r.dated?day(r.at)+`<small>${r.at.slice(0,4)} · data do movimento</small>`:new Date(r.at).toLocaleDateString('pt-PT',{timeZone:'Europe/Lisbon'})+`<small>${new Date(r.at).toLocaleTimeString('pt-PT',{timeZone:'Europe/Lisbon',hour:'2-digit',minute:'2-digit'})} · última atualização</small>`;
+  return table(['Data','Tipo','Movimento','Valor / horas','Estado'],rows.slice(0,overviewLimit).map(r=>`<tr><td>${dateLabel(r)}</td><td>${esc(overviewKinds[r.kind])}</td><td><a class="movement-link" href="${esc(r.href)}"><strong>${esc(r.title)}</strong><small>${esc(r.detail)}</small></a></td><td>${r.minutes!==undefined?hours(r.minutes):r.value!==undefined?euro(r.value):'—'}</td><td>${badge(r.status,r.tone)}</td></tr>`))+`<div class="panel-foot"><span role="status">${Math.min(overviewLimit,rows.length)} de ${rows.length} movimentos</span>${rows.length>overviewLimit?'<button class="btn small" type="button" data-overview-more>Mostrar mais</button>':''}</div>`;
+}
+function overviewHistory(){return panel('Últimos movimentos e atualizações','Pagamentos, recebimentos, trabalho e alterações recentes, num só lugar.',`<div class="toolbar"><label class="range-field">Tipo de movimento<select id="overview-filter" aria-label="Tipo de movimento" aria-controls="overview-history"><option value="all">Todos os movimentos</option>${overviewTypes().map(k=>`<option value="${k}" ${overviewFilter===k?'selected':''}>${overviewKinds[k]}</option>`).join('')}</select></label><span class="muted">Do mais recente para o mais antigo</span></div><div id="overview-history">${overviewHistoryBody()}</div>`);}
+function overviewStat(label,value,note,href,icon){return `<a class="stat overview-stat" href="${href}"><div class="stat-top">${label}<span class="stat-icon" aria-hidden="true">${icon}</span></div><div class="stat-value">${value}</div><div class="stat-note">${note}</div></a>`;}
+function overview(){
+  if(overviewOwner!==current.id){overviewFilter='all';overviewLimit=12;overviewOwner=current.id;}
+  if(overviewFilter!=='all'&&!overviewTypes().includes(overviewFilter))overviewFilter='all';
+  const s=LinoOverview.summary(state,current.role,today());
+  const kpi=overviewStat('Obras acessíveis',s.works,`${s.activeWorks} em curso`,'#obras','⌂')+
+    (admin()?overviewStat('Clientes',s.clients,'Clientes registados','#clientes','♧')+overviewStat('Por receber de clientes',euro(s.receivable),'Saldo das cobranças registadas','#recebimentos','↙'):'')+
+    (current.role!=='manager'?overviewStat(admin()?'Por pagar à equipa':'Por receber de trabalho',euro(s.wagesDue),'Saldo validado até hoje, após pagamentos','#pagamentos','€'):'')+
+    overviewStat('Por validar',s.pending,'Registos que aguardam confirmação','#trabalho','◷')+
+    overviewStat('Trabalho validado',hours(s.minutes),'Tempo confirmado até hoje','#horas','◴')+
+    (current.role!=='manager'?overviewStat('Valor apurado',euro(s.earned),'Remuneração acumulada do trabalho validado','#pagamentos','€'):'')+
+    (responsible()?overviewStat('Equipa ativa',s.team,'Funcionários no seu âmbito de acesso','#equipa','♧'):'');
+  const works=state.projects.filter(p=>p.status!=='Concluída').slice(0,4);
+  const worksPanel=panel('Obras em acompanhamento','Acesso rápido às obras em execução e planeadas.',`<div class="overview-projects">${works.map(p=>`<a href="#obra/${encodeURIComponent(p.id)}" class="overview-project"><span><strong>${esc(p.name)}</strong><small>${esc(p.client)} · ${esc(p.city)}</small></span>${entityStatusBadge(p.status)}</a>`).join('')||'<div class="empty">Sem obras em acompanhamento.</div>'}</div><div class="panel-foot"><a class="view-link" href="#obras">Ver todas as obras →</a></div>`);
+  const teamPanel=admin()?panel('Saldos da equipa','Trabalho validado menos pagamentos e adiantamentos, até hoje.',`<div class="payment-list">${[...s.balances].sort((a,b)=>b.balance-a.balance).slice(0,4).map(b=>{const e=person(b.employee);return `<div class="payment-item"><span class="avatar">${esc(initials(e.name))}</span><div class="payment-meta"><strong>${esc(e.name)}</strong><small>${esc(e.category)}</small></div><div class="payment-amount">${euro(Math.abs(b.balance))}<small>${b.balance<0?'Crédito a compensar':b.balance>0?'Por pagar':'Regularizado'}</small></div></div>`;}).join('')}</div><div class="panel-foot"><a class="view-link" href="#pagamentos">Gerir pagamentos →</a></div>`):'';
+  return heading(current.role==='worker'?'O seu dia de trabalho.':'Visão geral',`${esc(current.name)} · Obras, equipa e movimentos da operação.`,btn('+ Registar trabalho','new-work',true))+`<div class="period">Resumo acumulado · ${new Date().toLocaleDateString('pt-PT',{timeZone:'Europe/Lisbon',day:'numeric',month:'long',year:'numeric'})}</div><section class="stats overview-stats">${kpi}</section><div class="overview-layout"><section class="overview-main">${overviewHistory()}</section><aside class="overview-side">${worksPanel}${teamPanel}${clockNotice()}</aside></div><details class="overview-attention"><summary>Pendências e alertas da operação</summary>${attentionPanel()}</details>`;
+}
+document.addEventListener('change',event=>{if(event.target.id==='overview-filter'){overviewFilter=event.target.value;overviewLimit=12;document.querySelector('#overview-history').innerHTML=overviewHistoryBody();}});
+document.addEventListener('click',event=>{if(event.target.closest('[data-overview-more]')){overviewLimit+=12;document.querySelector('#overview-history').innerHTML=overviewHistoryBody();}});

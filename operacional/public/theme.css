@@ -1,0 +1,76 @@
+:root { color-scheme: light; }
+.theme-toggle { min-height: 36px; }
+.theme-toggle svg { flex-shrink: 0; }
+.login-theme { display: flex; justify-content: flex-end; margin-bottom: 24px; }
+.theme-toggle[aria-pressed="true"] { box-shadow: inset 0 0 0 1px #91ba9a; }
+@media (max-width: 1100px) {
+  .topbar .theme-toggle span { display: none; }
+}
+@media (max-width: 650px) {
+  .topbar { height: auto; min-height: 78px; flex-wrap: wrap; padding-top: 12px; padding-bottom: 12px; }
+  .topbar .top-actions { flex-wrap: wrap; }
+}
+
+/* Shared surfaces and status colours cover every operational module. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: #1b2923;
+  --surface-raised: #25362d;
+  --surface-input: #15221c;
+  --ink: #e3ece3;
+  --secondary: #b4c4b7;
+  --muted: #a6b7aa;
+  --line: #3a4d40;
+  --green: #3c7055;
+  --orange: #e7ba77;
+  background: #111b18;
+  color: var(--ink);
+}
+[data-theme="dark"] :is(.topbar, .stat, .panel, .report-period, .project-hero, .plan-card, dialog) {
+  background: var(--surface); color: var(--ink); border-color: var(--line);
+}
+[data-theme="dark"] :is(input, select, textarea, .field input, .field select, .field textarea, .range-field input, .cost-filters select, .attachment-toolbar select, .toolbar select, .top-actions select, .search) {
+  background: var(--surface-input); color: var(--ink); border-color: var(--line);
+}
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color: var(--muted); opacity: 1; }
+[data-theme="dark"] :is(.btn, .icon-button) { background: var(--surface-raised); color: var(--ink); border-color: var(--line); }
+[data-theme="dark"] .btn.primary { background: var(--green); border-color: #649574; color: #fff; }
+[data-theme="dark"] .btn.text { background: transparent; color: #b2d5a6; }
+[data-theme="dark"] .btn.danger { color: #ffb6a4; }
+[data-theme="dark"] .btn:hover { filter: brightness(1.12); }
+[data-theme="dark"] :is(td, .field, .checklist label, .range-field, .filter-foot, .timeline, .activity-row p, .clock-card p, .clock-notice p, .clock-period legend, .secret-title) { color: var(--secondary); }
+[data-theme="dark"] :is(td strong, .breadcrumb strong, .payment-meta strong, .payment-amount, .form-preview strong, .dashboard-banner strong, .hours-grid tbody th) { color: var(--ink); }
+[data-theme="dark"] :is(.eyebrow, .boot, .breadcrumb, .breadcrumb span, .profile-label.name, .account-role, .stat-top, .stat-note, .panel-head p, td small, .panel-foot, .progress-label, .payment-meta small, .meeting-card p, .activity-row time, .muted, .empty, .report-value small, footer, .form-help, .storage-note, .login-card>p, .login-foot, .api-note, .profile-card p, .mobile-note, .field.full p, .attention-item p, .project-hero dt, .project-financial dt, .project-financial p, .project-notes small, .attachment-info small, .clock-correction-card small, .hours-period small, .hours-grid th small, .plan-card small, .plan-empty) { color: var(--muted); }
+[data-theme="dark"] :is(th, .hours-grid thead th, .hours-grid tfoot th, .hours-grid tfoot td) { background: var(--surface-raised); color: var(--secondary); }
+[data-theme="dark"] .hours-grid tbody tr>:first-child { background: var(--surface); }
+[data-theme="dark"] :is(td, th, .attention-item, .project-notes article, .attachment-card, .clock-correction-card, .clock-period, .hours-period, .hours-grid tr>:first-child, .activity-dot) { border-color: var(--line); }
+[data-theme="dark"] :is(.avatar, .stat-icon, .project-icon, .panel-count, .icon-button, .progress, .checklist, .attachment-pdf, .attachment-card img, .clock-comparison section, .plan-day, .plan-cancelled) {
+  background: var(--surface-raised); color: var(--secondary); border-color: var(--line);
+}
+[data-theme="dark"] .clickable:hover { background: var(--surface-raised); }
+[data-theme="dark"] :is(.badge, .permission-chip, .form-preview, .future-banner, .dashboard-banner, .secret-box, .meeting-card, .clock-card, .clock-notice, .tabs .btn.selected) {
+  background: #263d2d; color: #bfd9ae; border-color: #52694a;
+}
+[data-theme="dark"] :is(.stat-note b, .plan-card .plan-project, .view-link, .dashboard-banner a, .dashboard-banner p, .meeting-card .eyebrow) { color: #b2d5a6; }
+[data-theme="dark"] :is(.badge.amber, .notice, .hours-alert, .absence-card, .clock-card.is-paused) { background: #3b3020; color: #f0cf94; border-color: #796440; }
+[data-theme="dark"] :is(.absence-card>span, .clock-card .clock-warning, .hours-pending, .balance-negative, .payment-amount small) { color: #f0cf94; }
+[data-theme="dark"] .badge.gray { background: #303a34; color: #c1cdc3; }
+[data-theme="dark"] :is(.badge.red, .form-error) { background: #442b27; color: #ffc1b2; border-color: #825448; }
+[data-theme="dark"] .clock-explainer { border-color: var(--line); }
+[data-theme="dark"] .login-story .eyebrow { color: #bfd9ae; }
+[data-theme="dark"] dialog { box-shadow: 0 30px 120px #0008; }
+[data-theme="dark"] dialog::backdrop { background: #050b09aa; }
+[data-theme="dark"] #toast { background: #345b42; color: #fff; border: 1px solid #719379; }
+
+.badge.entity-status { gap:6px; border:1px solid; font-size:10px; font-weight:600; padding:5px 8px; white-space:nowrap; }
+.badge.entity-status::before { display:none; }
+.badge.entity-status svg { flex-shrink:0; }
+.badge.entity-status.status-active,.badge.entity-status.status-complete { background:#eaf6ed; color:#25633a; border-color:#bfdfc7; }
+.badge.entity-status.status-progress { background:#eaf2ff; color:#245c9b; border-color:#bfd4f0; }
+.badge.entity-status.status-planned { background:#fff4dd; color:#825411; border-color:#ead29d; }
+.badge.entity-status.status-inactive { background:#eef0f3; color:#535e6d; border-color:#d3d9e0; }
+[data-theme="dark"] .badge.entity-status.status-active,[data-theme="dark"] .badge.entity-status.status-complete { background:#203d2c; color:#a9e2ba; border-color:#456c51; }
+[data-theme="dark"] .badge.entity-status.status-progress { background:#20354e; color:#b5d6ff; border-color:#43658c; }
+[data-theme="dark"] .badge.entity-status.status-planned { background:#42351e; color:#f4d18d; border-color:#80683b; }
+[data-theme="dark"] .badge.entity-status.status-inactive { background:#30363f; color:#c5cedb; border-color:#586370; }

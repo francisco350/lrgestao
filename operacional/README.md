@@ -1,4 +1,4 @@
-# Lino Rua — versão futura 0.13
+# Lino Rua — aplicação 0.14
 
 Aplicação independente com contas próprias por utilizador e palavra-passe, SQLite persistente e autorização no servidor. Usa dados fictícios. O protótipo v0.2 continua preservado em `dist/prototipo/`.
 
@@ -9,11 +9,11 @@ Requer Node.js 24 ou superior. O servidor não depende de pacotes externos.
 1. Na pasta principal, executar `npm run future:seed` apenas na primeira utilização. Cria dados fictícios e quatro contas, com palavras-passe aleatórias mostradas uma vez na saída. Se já houver dados, recusa substituí-los.
 2. Guardar os acessos mostrados. Não os incluir no Git nem em documentação pública.
 3. Executar `npm run future:start`.
-4. Abrir http://127.0.0.1:4174/app/ . A seleção local de versões está em http://127.0.0.1:4174/ .
+4. Abrir http://127.0.0.1:4174/ . O login abre diretamente, sem seleção de versões; /app/ continua compatível.
 
-Utilizadores fictícios: `lino` (administrador), `antonio` (encarregado), `joao` e `rui` (colaboradores em obras diferentes). Não há uma palavra-passe universal nem credenciais fixas no código. As quatro contas de demonstração já inicializadas não exigem troca imediata; novas contas criadas pelo administrador exigem alterar a palavra-passe provisória na primeira entrada.
+O seed de uma base nova cria os utilizadores fictícios: `lino` (administrador), `antonio` (encarregado), `joao` e `rui` (colaboradores em obras diferentes). Não há uma palavra-passe universal nem credenciais fixas no código. As quatro contas de demonstração já inicializadas não exigem troca imediata; novas contas criadas pelo administrador exigem alterar a palavra-passe provisória na primeira entrada.
 
-O administrador pode criar contas, associá-las a funcionários, atribuir obras aos encarregados, desativar acessos e repor palavras-passe de outras contas. Cada funcionário só pode estar associado a uma conta. A última conta de administrador ativa é preservada.
+O administrador pode criar contas, associá-las a funcionários, atribuir obras aos encarregados, desativar acessos e repor palavras-passe de outras contas. Cada funcionário só pode estar associado a uma conta. A última conta de administrador ativa é preservada. Em **Administração da empresa**, pode alterar o nome da empresa, o seu utilizador e a sua palavra-passe. A conta local existente do Lino foi renomeada para `linorua`; o seed não altera contas já existentes.
 
 ## Perfis
 
@@ -28,7 +28,7 @@ As restrições são aplicadas pelo servidor em cada operação e resposta. O se
 ## Dados e autenticação
 
 - Base em `operacional/data/lino.sqlite`, excluída do Git. Dados da versão futura são independentes do localStorage do protótipo.
-- Tabelas de contas, sessões, migrações, auditoria e limites de login. Os registos operacionais são guardados num documento SQLite transacional, com revisão global para detetar alterações concorrentes. Esta primeira implementação destina-se a uma empresa pequena, num único servidor; não tem ainda isolamento entre múltiplas empresas.
+- Tabelas de contas, sessões, migrações, auditoria e limites de login. Os registos operacionais são guardados num documento SQLite transacional, com revisão global para detetar alterações concorrentes. Cada empresa tem a sua própria base SQLite e diretório de anexos, registados em platform.sqlite. O login resolve a empresa pela conta; nomes de utilizador são únicos na plataforma. Esta implementação continua a exigir um único processo de aplicação e armazenamento persistente. Consulte [EMPRESAS.md](../EMPRESAS.md).
 - Palavras-passe com scrypt, salt aleatório por conta e parâmetros N=32768, r=8, p=3. Verificação em tempo constante do resultado. Referência: [OWASP Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
 - Tokens de sessão aleatórios, guardados no servidor apenas como SHA-256. Cookie HttpOnly e SameSite=Strict; Secure e prefixo `__Host-` em produção. Expiração absoluta de 8 horas e inatividade máxima de 1 hora.
 - Proteção de escrita por origem exata, token CSRF, limite de tamanho de pedidos, limites persistentes de tentativas de login e limite de operações de hash simultâneas.
@@ -171,7 +171,7 @@ O prazo da demonstração aplica-se a toda a empresa, incluindo administradores 
 
 O controlo reside nas tabelas `trial_access` e `trial_events`, fora do documento de negócio e das exportações JSON. Não há operação HTTP que as altere. Suspender, alterar ou renovar o prazo invalida todas as sessões. Cada pedido à API é bloqueado se o período estiver expirado ou suspenso; a expiração não depende de um agendador. A interface verifica o estado a cada 15 segundos e ao retomar o separador. O bloqueio conserva todos os dados, incluindo turnos por terminar, que podem necessitar de correção quando o acesso for retomado.
 
-Em produção, a ausência de configuração bloqueia o acesso até o proprietário ativar o período. Em desenvolvimento, bases antigas sem período configurado continuam disponíveis. Cada instalação tem uma única empresa: para outros clientes, usar instalações/bases separadas. A gestão remota por painel e o alojamento online não fazem parte desta entrega; os comandos executam-se no servidor que aloja a empresa.
+Em produção, a ausência de configuração bloqueia o acesso até o proprietário ativar o período. Em desenvolvimento, bases antigas sem período configurado continuam disponíveis. Cada empresa tem um período independente: escolha a base pretendida através de DATABASE_PATH antes de executar os comandos de controlo. A gestão remota por painel e o alojamento online não fazem parte desta entrega; os comandos executam-se no servidor que aloja a empresa.
 
 ## Publicação online
 
