@@ -10,3 +10,20 @@ test('quantidade fracionária arredonda ao cêntimo e ignora valores derivados d
   C.apply(state,user,'cost',{project:'one',kind:'material',description:'Teste',date:'2026-10-01',quantity:.5,unit:'m',unitPrice:.05,amount:999},D);assert.equal(state.costs[0].amount,.03);
   assert.throws(()=>C.apply(state,user,'cost',{project:'one',kind:'material',description:'Teste',date:'2026-10-01',quantity:.001,unit:'m',unitPrice:.01},D));
 });
+
+test('inventário: entrada sem obra, saída parcial, saldo insuficiente e anulação',()=>{
+  const state={projects:[{id:'obra'}],entries:[],costs:[]};
+  const user={role:'admin',id:'admin'},date='2026-01-01';
+  const apply=(type,data)=>C.apply(state,user,type,data,D);
+  apply('stockReceive',{description:'Cimento',date,quantity:10,unit:'saco',unitPrice:5});
+  const lot=state.inventory[0],issue={lot:lot.id,date,project:'obra',quantity:3};
+  assert.equal(C.summary(state)[0].total,0);
+  apply('stockIssue',issue);
+  assert.equal(C.available(state,lot),7);
+  assert.equal(C.summary(state)[0].materials,15);
+  assert.throws(()=>apply('stockIssue',{...issue,quantity:8}),/stock disponível/);
+  assert.equal(state.costs.length,1);
+  apply('voidCost',{id:state.costs[0].id,reason:'Devolução'});
+  assert.equal(C.available(state,lot),10);
+  assert.equal(C.summary(state)[0].materials,0);
+});

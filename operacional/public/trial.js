@@ -9,8 +9,8 @@ async function checkTrial(){
    return;
   }
   const main=$('#app');if(!response.ok||!current||!main||!result.access?.expiresAt)return;
-  let notice=$('#trial-notice');if(!notice){notice=document.createElement('div');notice.id='trial-notice';notice.className='notice';notice.setAttribute('role','status');main.prepend(notice);}
-  notice.textContent='Acesso de demonstração até '+new Date(result.access.expiresAt).toLocaleString('pt-PT',{timeZone:'Europe/Lisbon'})+' (Lisboa). Para prolongar, contacte o responsável pela aplicação.';
+  let notice=$('#trial-notice');if(!notice){notice=document.createElement('details');notice.id='trial-notice';notice.className='notice info-disclosure';notice.innerHTML='<summary>Acesso de demonstração</summary><div></div>';main.prepend(notice);}
+  notice.lastElementChild.textContent='Acesso de demonstração até '+new Date(result.access.expiresAt).toLocaleString('pt-PT',{timeZone:'Europe/Lisbon'})+' (Lisboa). Para prolongar, contacte o responsável pela aplicação.';
  }catch{/* Connectivity failures do not decide licensing; API access remains server-enforced. */}
 }
 document.addEventListener('DOMContentLoaded',()=>{checkTrial();setInterval(checkTrial,15000);});

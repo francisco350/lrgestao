@@ -22,3 +22,51 @@
 @media(max-width:650px){.directory-search{padding:0 16px 18px;gap:10px}.directory-search .field{flex-basis:100%;max-width:none}.directory-count{padding-bottom:12px}}
 
 .brand>span:last-child{min-width:0;overflow-wrap:anywhere;letter-spacing:.2px}.sidebar .brand{font-size:14px;gap:10px;line-height:1.4}.brand-icon{flex-shrink:0}.account-actions{flex-wrap:wrap}.profile-card a{font-weight:600}
+
+.plan-dragging{user-select:none}.plan-day.plan-selected{outline:2px solid #8fa473;outline-offset:-2px;background:#8fa47322}#plan-selection{position:fixed;pointer-events:none;z-index:1000;border:2px solid #8fa473;background:#8fa47333}.planning-week .plan-day-heading{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-rows:20px 20px;
+  column-gap:4px;
+  row-gap:0;
+  align-items:center;
+}
+.plan-day-heading h2{grid-column:1;grid-row:1;white-space:nowrap}
+.plan-day-heading .badge{grid-column:1;grid-row:2;justify-self:start}
+.planning-week .plan-day-heading [data-plan-add]{grid-column:2;grid-row:1;min-width:28px;padding:4px;line-height:1}
+
+/* Keep each week within the available workspace. */
+.planning-week{grid-template-columns:repeat(7,minmax(0,1fr));overflow:visible;gap:8px;align-items:stretch}
+.planning-week .plan-day{min-height:250px;padding:8px;cursor:crosshair}
+.planning-week .plan-card{padding:8px;cursor:auto}
+.planning-week .btn{max-width:100%;white-space:normal}
+.agenda-navigation{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:20px 0 8px}
+.agenda-navigation .actions{flex-wrap:wrap}
+details.info-disclosure{display:block}
+.info-disclosure summary{cursor:pointer;font-weight:600}
+.info-disclosure[open]>div{margin-top:8px}
+@media(max-width:1150px){
+  .planning-week{grid-template-columns:repeat(7,minmax(180px,1fr));max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+}
+@media(max-width:760px){.planning-week .plan-day{min-height:200px}}
+
+.month-filter{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:8px 16px;min-width:0;margin:0 0 16px}
+.month-navigation,.month-shortcuts{display:flex;align-items:center;gap:6px;max-width:100%}
+.month-navigation .btn,.month-shortcuts .btn,.month-input{box-sizing:border-box;height:40px;white-space:nowrap}
+.month-navigation .btn{min-width:38px;padding:0 8px;font-size:18px}
+.month-input{min-width:0;width:11rem;padding:0 8px;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:7px;background:var(--surface,#fff);color:inherit}
+@media(max-width:560px){.month-filter{flex-direction:column;align-items:flex-start}}
+
+.month-field{position:relative;display:flex;min-width:0}
+.month-field>span{position:absolute;inset:1px 2em 1px 1px;display:flex;align-items:center;padding-left:8px;pointer-events:none;font-size:12px}
+.month-field:has(span) input:not(:focus)::-webkit-datetime-edit{opacity:0}
+.month-field:focus-within>span{display:none}
+
+.month-filter:has(.period-date-range){align-items:flex-end}
+.period-date-range{display:flex;gap:8px;margin-inline-start:auto;max-width:100%}
+.period-date-range .range-field{min-width:0}
+.period-date-range input{height:40px;width:100%;box-sizing:border-box}
+@media(max-width:760px){
+  .month-filter:has(.period-date-range){align-items:flex-start;flex-direction:row}
+  .period-date-range{flex-basis:100%;margin-inline-start:0}
+}

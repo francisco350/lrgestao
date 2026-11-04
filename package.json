@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "node operacional/platform.cjs",
-    "test": "node --test model.test.cjs operacional/api.test.cjs operacional/costs.test.cjs operacional/attachments.test.cjs operacional/timeclock.test.cjs operacional/clock-corrections.test.cjs operacional/hours.test.cjs operacional/planning.test.cjs operacional/absences.test.cjs operacional/demo-quarter.test.cjs operacional/trial.test.cjs operacional/overview.test.cjs operacional/companies.test.cjs",
+    "test": "node --test model.test.cjs operacional/api.test.cjs operacional/costs.test.cjs operacional/attachments.test.cjs operacional/timeclock.test.cjs operacional/clock-corrections.test.cjs operacional/hours.test.cjs operacional/planning.test.cjs operacional/calendar.test.cjs operacional/absences.test.cjs operacional/demo-quarter.test.cjs operacional/trial.test.cjs operacional/overview.test.cjs operacional/companies.test.cjs",
     "test:browser": "node verify.cjs",
     "future:start": "node operacional/platform.cjs",
     "future:trial": "node operacional/trial-control.cjs",

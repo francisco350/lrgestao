@@ -4,9 +4,29 @@ const categories=['Transporte','Aluguer de equipamento','Subcontratação','Res�
 const units=['un','m','m²','m³','kg','L','saco','caixa'];
 function normalize(state){state.costs??=[];return state;}
 function apply(state,user,type,data,{fail,text,isoToday}){
-  if(!['cost','voidCost'].includes(type))return false;
+  if(!['cost','voidCost','stockReceive','stockIssue'].includes(type))return false;
   if(user.role!=='admin')fail('Esta operação é exclusiva do administrador.',403);
   normalize(state);
+  const decimal=(v,scale,min,max,label)=>{if(typeof v!=='number'||!Number.isFinite(v)||v<min||v>max||Math.abs(v*scale-Math.round(v*scale))>1e-6)fail(label);return Math.round(v*scale);};
+  if(type==='stockReceive'){
+    const quantity=decimal(data.quantity,1000,.001,100000,'Quantidade inválida.')/1000;
+    const unitPrice=decimal(data.unitPrice,100,.01,1000000,'Preço unitário inválido.')/100;
+    if(!units.includes(data.unit))fail('Unidade inválida.');
+    if(!M.validDate(data.date)||data.date>isoToday())fail('Indique uma data de entrada até hoje.');
+    const lot={id:crypto.randomUUID(),description:text(data.description,160),quantity,unit:data.unit,unitPrice,date:data.date,createdBy:user.id};
+    (state.inventory??=[]).push(lot);
+    return true;
+  }
+  if(type==='stockIssue'){
+    const lot=(state.inventory||[]).find(item=>item.id===data.lot);
+    if(!lot)fail('Entrada de inventário inexistente.');
+    const quantity=decimal(data.quantity,1000,.001,100000,'Quantidade inválida.')/1000;
+    if(quantity>available(state,lot))fail('Quantidade superior ao stock disponível.');
+    if(data.date<lot.date)fail('A saída deve ocorrer após a entrada ou no mesmo dia.');
+    apply(state,user,'cost',{kind:'material',project:data.project,description:lot.description,date:data.date,unit:lot.unit,unitPrice:lot.unitPrice,quantity},{fail,text,isoToday});
+    state.costs.at(-1).inventoryLot=lot.id;
+    return true;
+  }
   if(type==='voidCost'){
     const row=state.costs.find(c=>c.id===data.id);if(!row||row.voided)fail('Custo inexistente ou já anulado.');
     Object.assign(row,{voided:true,voidReason:text(data.reason,200),voidedBy:user.id,voidedAt:new Date().toISOString()});return true;
@@ -15,7 +35,7 @@ function apply(state,user,type,data,{fail,text,isoToday}){
   if(!state.projects.some(p=>p.id===data.project))fail('Obra não encontrada.',404);
   if(!['material','expense'].includes(data.kind))fail('Selecione material ou despesa.');
   if(!M.validDate(data.date)||data.date>isoToday())fail('Indique a data do custo, até hoje.');
-  const decimal=(v,scale,min,max,label)=>{if(typeof v!=='number'||!Number.isFinite(v)||v<min||v>max||Math.abs(v*scale-Math.round(v*scale))>1e-6)fail(label);return Math.round(v*scale);};
+
   const quantity=data.kind==='expense'?1:data.quantity;
   const q=decimal(quantity,1000,.001,100000,'Quantidade inválida: use até três casas decimais.');
   const cents=decimal(data.unitPrice,100,.01,1000000,'Custo inválido: use até duas casas decimais.');
@@ -29,6 +49,10 @@ function apply(state,user,type,data,{fail,text,isoToday}){
   state.costs.push({id:crypto.randomUUID(),project:data.project,kind:data.kind,category,description:text(data.description,160),date:data.date,quantity:q/1000,unit,unitPrice:cents/100,amount:totalCents/100,supplier:optional(data.supplier,120),reference:optional(data.reference,100),note:optional(data.note,200),createdBy:user.id,createdAt:new Date().toISOString()});
   return true;
 }
+function available(state,lot){
+  const issued=(state.costs||[]).filter(c=>c.inventoryLot===lot.id&&!c.voided);
+  return (Math.round(lot.quantity*1000)-issued.reduce((sum,c)=>sum+Math.round(c.quantity*1000),0))/1000;
+}
 function summary(state){return state.projects.map(p=>{
   const costs=(state.costs||[]).filter(c=>c.project===p.id&&!c.voided);
   const materials=M.money(costs.filter(c=>c.kind==='material').reduce((sum,c)=>sum+c.amount,0));
@@ -36,4 +60,4 @@ function summary(state){return state.projects.map(p=>{
   const labour=M.total(state.entries.filter(r=>r.project===p.id&&r.status==='approved'));
   return {project:p.id,materials,expenses,labour,direct:M.money(materials+expenses),total:M.money(materials+expenses+labour)};
 });}
-module.exports={normalize,apply,summary};
+module.exports={normalize,apply,available,summary};

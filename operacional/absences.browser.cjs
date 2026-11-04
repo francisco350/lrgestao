@@ -5,7 +5,7 @@ module.exports=async({a,m,w})=>{
  const range=async(page)=>{await page.getByLabel('Ausências desde').fill('2026-11-01');await page.getByLabel('Ausências até').fill('2026-11-30');await page.getByRole('button',{name:'Filtrar ausências',exact:true}).click();};
  const save=async(page)=>{await page.getByRole('button',{name:'Guardar',exact:true}).click();await page.locator('dialog').waitFor({state:'hidden'});};
  const planForm=async(page)=>{
-  await page.getByRole('link',{name:'Planeamento semanal',exact:true}).click();await page.getByLabel('Semana de referência').fill('2026-11-02');await page.getByRole('button',{name:'Aplicar ao planeamento',exact:true}).click();
+  await page.getByRole('link',{name:'Agenda',exact:true}).click();await page.getByLabel('Semana de referência').fill('2026-11-02');await page.getByRole('button',{name:'Aplicar ao planeamento',exact:true}).click();
   await page.getByRole('button',{name:'+ Planear trabalho',exact:true}).click();await page.getByLabel('Obra planeada').selectOption('o1');await page.getByLabel('João Martins',{exact:true}).check();
   for(const el of await page.locator('[name="planDates"]').all())await el.uncheck();await page.getByLabel('02/11/2026',{exact:true}).check();
  };
@@ -25,7 +25,7 @@ module.exports=async({a,m,w})=>{
  await planForm(m.p);await m.p.getByRole('button',{name:'Guardar',exact:true}).click();await m.p.getByText('O funcionário está indisponível nesse período. Consulte as ausências antes de planear.',{exact:true}).waitFor();await m.p.getByRole('button',{name:'Cancelar',exact:true}).last().click();assert.equal(await m.p.locator('.plan-card').count(),0);assert.equal(await m.p.locator('.absence-card').count(),3);assert(!(await m.p.locator('.planning-week').innerText()).includes('Férias'));await m.p.screenshot({path:'future-planning-absences.png',fullPage:true});
  await row.getByRole('button',{name:'Cancelar',exact:true}).click();await p.getByLabel('Motivo do cancelamento da ausência').fill('Férias reagendadas');await save(p);await p.getByLabel('Estado da ausência',{exact:true}).selectOption('all');await p.getByRole('button',{name:'Filtrar ausências',exact:true}).click();await row.getByText('Cancelada',{exact:true}).waitFor();
  await nav(w.p,'Férias e indisponibilidades');await range(w.p);await w.p.getByLabel('Estado da ausência',{exact:true}).selectOption('all');await w.p.getByRole('button',{name:'Filtrar ausências',exact:true}).click();await w.p.getByRole('row').filter({hasText:'João Martins'}).getByRole('button',{name:'Detalhes',exact:true}).click();await w.p.getByText('Cancelamento: Férias reagendadas',{exact:true}).waitFor();await w.p.getByRole('button',{name:'Fechar',exact:true}).last().click();
- await nav(m.p,'Planeamento semanal');await planForm(m.p);await save(m.p);assert.equal(await m.p.locator('.plan-card').count(),1);assert.equal(await m.p.locator('.absence-card').count(),1);
+ await nav(m.p,'Agenda');await planForm(m.p);await save(m.p);assert.equal(await m.p.locator('.plan-card').count(),1);assert.equal(await m.p.locator('.absence-card').count(),1);
  await w.p.setViewportSize({width:1440,height:1000});
  console.log('PASS: férias e indisponibilidades, conflitos nos dois sentidos, privacidade, consulta móvel, edição, cancelamento e libertação de horários.');
 };

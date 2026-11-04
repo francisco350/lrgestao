@@ -21,7 +21,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),assert=req
     }
     await page.getByRole('link',{name:'Obras',exact:true}).click();await page.screenshot({path:'future-quarter-projects.png',fullPage:true});
     await page.getByRole('link',{name:'Recebimentos',exact:true}).click();assert((await page.locator('main').innerText()).includes('DEMO ·'));await page.getByRole('link',{name:'Materiais e despesas',exact:true}).click();assert((await page.locator('main').innerText()).includes('DEMO ·'));
-    await page.getByRole('link',{name:'Planeamento semanal',exact:true}).click();await page.getByLabel('Semana de referência').fill('2026-10-22');await page.getByRole('button',{name:'Aplicar ao planeamento',exact:true}).click();assert(await page.locator('.plan-card').count()>0);
+    await page.getByRole('link',{name:'Agenda',exact:true}).click();await page.getByLabel('Semana de referência').fill('2026-10-22');await page.getByRole('button',{name:'Aplicar ao planeamento',exact:true}).click();assert(await page.locator('.plan-card').count()>0);
    }
    await context.close();
   }

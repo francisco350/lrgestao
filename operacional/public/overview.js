@@ -2,7 +2,7 @@
 let overviewFilter='all',overviewLimit=12,overviewOwner;
 const overviewKinds={trabalho:'Trabalho e ponto',pagamentos:'Pagamentos à equipa',recebimentos:'Recebimentos',cobrancas:'Cobranças',custos:'Materiais e despesas',obras:'Obras',clientes:'Clientes',equipa:'Equipa'};
 function overviewTypes(){return ['trabalho',...(current.role!=='manager'?['pagamentos']:[]),...(admin()?['recebimentos','cobrancas','custos','clientes','equipa']:[]),'obras'];}
-function overviewRows(){return LinoOverview.activity(state,current.role).filter(r=>overviewFilter==='all'||r.kind===overviewFilter);}
+function overviewRows(){return LinoOverview.activity(state,current.role).filter(r=>(overviewFilter==='all'||r.kind===overviewFilter)&&inMonth(String(r.at||''),monthFor('resumo')));}
 function overviewHistoryBody(){
   const rows=overviewRows();
   const dateLabel=r=>r.dated?day(r.at)+`<small>${r.at.slice(0,4)} · data do movimento</small>`:new Date(r.at).toLocaleDateString('pt-PT',{timeZone:'Europe/Lisbon'})+`<small>${new Date(r.at).toLocaleTimeString('pt-PT',{timeZone:'Europe/Lisbon',hour:'2-digit',minute:'2-digit'})} · última atualização</small>`;
@@ -13,18 +13,35 @@ function overviewStat(label,value,note,href,icon){return `<a class="stat overvie
 function overview(){
   if(overviewOwner!==current.id){overviewFilter='all';overviewLimit=12;overviewOwner=current.id;}
   if(overviewFilter!=='all'&&!overviewTypes().includes(overviewFilter))overviewFilter='all';
-  const s=LinoOverview.summary(state,current.role,today());
+  const month=monthFor('resumo'),cutoff=monthRange(month).until||today();
+  const s=LinoOverview.summary(state,current.role,cutoff);
+  if(month){
+    const entries=state.entries.filter(r=>inMonth(r.date,month));
+    const approved=entries.filter(r=>r.status==='approved');
+    s.minutes=approved.reduce((n,r)=>n+r.minutes,0);
+    s.pending=entries.filter(r=>r.status==='pending').length;
+    if(current.role!=='manager')s.earned=total(approved);
+    if(admin())s.receivable=money(state.charges.reduce((sum,c)=>sum+balanceAt(c,month),0));
+  }
   const kpi=overviewStat('Obras acessíveis',s.works,`${s.activeWorks} em curso`,'#obras','⌂')+
-    (admin()?overviewStat('Clientes',s.clients,'Clientes registados','#clientes','♧')+overviewStat('Por receber de clientes',euro(s.receivable),'Saldo das cobranças registadas','#recebimentos','↙'):'')+
-    (current.role!=='manager'?overviewStat(admin()?'Por pagar à equipa':'Por receber de trabalho',euro(s.wagesDue),'Saldo validado até hoje, após pagamentos','#pagamentos','€'):'')+
+    (admin()?overviewStat('Clientes',s.clients,'Clientes registados','#clientes','♧')+overviewStat('Por receber de clientes',euro(s.receivable),month?'Saldo no fecho do mês':'Saldo das cobranças registadas','#recebimentos','↙'):'')+
+    (current.role!=='manager'?overviewStat(admin()?'Por pagar à equipa':'Por receber de trabalho',euro(s.wagesDue),'Saldo até ao fecho, após pagamentos','#pagamentos','€'):'')+
     overviewStat('Por validar',s.pending,'Registos que aguardam confirmação','#trabalho','◷')+
-    overviewStat('Trabalho validado',hours(s.minutes),'Tempo confirmado até hoje','#horas','◴')+
-    (current.role!=='manager'?overviewStat('Valor apurado',euro(s.earned),'Remuneração acumulada do trabalho validado','#pagamentos','€'):'')+
+    overviewStat('Trabalho validado',hours(s.minutes),'Tempo confirmado no período','#horas','◴')+
+    (current.role!=='manager'?overviewStat('Valor apurado',euro(s.earned),'Trabalho validado no período','#pagamentos','€'):'')+
     (responsible()?overviewStat('Equipa ativa',s.team,'Funcionários no seu âmbito de acesso','#equipa','♧'):'');
   const works=state.projects.filter(p=>p.status!=='Concluída').slice(0,4);
   const worksPanel=panel('Obras em acompanhamento','Acesso rápido às obras em execução e planeadas.',`<div class="overview-projects">${works.map(p=>`<a href="#obra/${encodeURIComponent(p.id)}" class="overview-project"><span><strong>${esc(p.name)}</strong><small>${esc(p.client)} · ${esc(p.city)}</small></span>${entityStatusBadge(p.status)}</a>`).join('')||'<div class="empty">Sem obras em acompanhamento.</div>'}</div><div class="panel-foot"><a class="view-link" href="#obras">Ver todas as obras →</a></div>`);
-  const teamPanel=admin()?panel('Saldos da equipa','Trabalho validado menos pagamentos e adiantamentos, até hoje.',`<div class="payment-list">${[...s.balances].sort((a,b)=>b.balance-a.balance).slice(0,4).map(b=>{const e=person(b.employee);return `<div class="payment-item"><span class="avatar">${esc(initials(e.name))}</span><div class="payment-meta"><strong>${esc(e.name)}</strong><small>${esc(e.category)}</small></div><div class="payment-amount">${euro(Math.abs(b.balance))}<small>${b.balance<0?'Crédito a compensar':b.balance>0?'Por pagar':'Regularizado'}</small></div></div>`;}).join('')}</div><div class="panel-foot"><a class="view-link" href="#pagamentos">Gerir pagamentos →</a></div>`):'';
-  return heading(current.role==='worker'?'O seu dia de trabalho.':'Visão geral',`${esc(current.name)} · Obras, equipa e movimentos da operação.`,btn('+ Registar trabalho','new-work',true))+`<div class="period">Resumo acumulado · ${new Date().toLocaleDateString('pt-PT',{timeZone:'Europe/Lisbon',day:'numeric',month:'long',year:'numeric'})}</div><section class="stats overview-stats">${kpi}</section><div class="overview-layout"><section class="overview-main">${overviewHistory()}</section><aside class="overview-side">${worksPanel}${teamPanel}${clockNotice()}</aside></div><details class="overview-attention"><summary>Pendências e alertas da operação</summary>${attentionPanel()}</details>`;
+  const teamPanel=admin()?panel('Saldos da equipa','Trabalho validado menos pagamentos e adiantamentos, até ao fecho.',`<div class="payment-list">${[...s.balances].sort((a,b)=>b.balance-a.balance).slice(0,4).map(b=>{const e=person(b.employee);return `<div class="payment-item"><span class="avatar">${esc(initials(e.name))}</span><div class="payment-meta"><strong>${esc(e.name)}</strong><small>${esc(e.category)}</small></div><div class="payment-amount">${euro(Math.abs(b.balance))}<small>${b.balance<0?'Crédito a compensar':b.balance>0?'Por pagar':'Regularizado'}</small></div></div>`;}).join('')}</div><div class="panel-foot"><a class="view-link" href="#pagamentos">Gerir pagamentos →</a></div>`):'';
+  return heading(current.role==='worker'?'O seu dia de trabalho.':'Visão geral',`${esc(current.name)} · Obras, equipa e movimentos da operação.`,btn('+ Registar trabalho','new-work',true))+monthPicker('resumo')+`<div class="period">${month||'Resumo acumulado'} · ${new Date().toLocaleDateString('pt-PT',{timeZone:'Europe/Lisbon',day:'numeric',month:'long',year:'numeric'})}</div><section class="stats overview-stats">${kpi}</section><div class="overview-layout"><section class="overview-main">${overviewHistory()}</section><aside class="overview-side">${worksPanel}${teamPanel}${clockNotice()}</aside></div><details class="overview-attention"><summary>Pendências e alertas da operação</summary>${attentionPanel()}</details>`;
 }
 document.addEventListener('change',event=>{if(event.target.id==='overview-filter'){overviewFilter=event.target.value;overviewLimit=12;document.querySelector('#overview-history').innerHTML=overviewHistoryBody();}});
 document.addEventListener('click',event=>{if(event.target.closest('[data-overview-more]')){overviewLimit+=12;document.querySelector('#overview-history').innerHTML=overviewHistoryBody();}});
+
+document.addEventListener('click',event=>{
+  if(page!=='resumo')return;
+  const link=event.target.closest('.overview-stat,.payment-list ~ .panel-foot a');
+  if(!link)return;
+  const target=link.hash.slice(1),month=monthFor('resumo');
+  if(['pagamentos','recebimentos','clientes','horas','trabalho'].includes(target))setMonth(target,month);
+});

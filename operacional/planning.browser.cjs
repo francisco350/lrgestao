@@ -1,14 +1,14 @@
 const assert=require('node:assert/strict');
 module.exports=async({a,m,w})=>{
  const p=a.p;
- await p.getByRole('link',{name:'Planeamento semanal',exact:true}).click();await p.getByLabel('Semana de referência').fill('2026-10-21');await p.getByRole('button',{name:'Aplicar ao planeamento',exact:true}).click();
+ await p.getByRole('link',{name:'Agenda',exact:true}).click();await p.getByLabel('Semana de referência').fill('2026-10-21');await p.getByRole('button',{name:'Aplicar ao planeamento',exact:true}).click();
  await p.getByRole('button',{name:'+ Planear trabalho',exact:true}).click();await p.getByLabel('Obra planeada',{exact:true}).selectOption('o1');
  await p.getByLabel('António Ferreira',{exact:true}).check();await p.getByLabel('João Martins',{exact:true}).check();
  for(const el of await p.locator('[name="planDates"]').all())await el.uncheck();
  await p.getByLabel('21/10/2026',{exact:true}).check();await p.getByLabel('22/10/2026',{exact:true}).check();await p.getByLabel('Trabalho previsto').fill('Preparação de paredes · teste');
  await p.getByRole('button',{name:'Guardar',exact:true}).click();await p.locator('dialog').waitFor({state:'hidden'});assert.equal(await p.locator('.plan-card').count(),4);
  for(const user of [m,w]){
-  await user.p.getByLabel('Atualizar dados',{exact:true}).click();await user.p.getByRole('link',{name:'Planeamento semanal',exact:true}).click();await user.p.getByLabel('Semana de referência').fill('2026-10-21');await user.p.getByRole('button',{name:'Aplicar ao planeamento',exact:true}).click();
+  await user.p.getByLabel('Atualizar dados',{exact:true}).click();await user.p.getByRole('link',{name:'Agenda',exact:true}).click();await user.p.getByLabel('Semana de referência').fill('2026-10-21');await user.p.getByRole('button',{name:'Aplicar ao planeamento',exact:true}).click();
  }
  assert.equal(await w.p.locator('.plan-card').count(),2);assert.equal(await w.p.getByRole('button',{name:'+ Planear trabalho',exact:true}).count(),0);assert.equal(await w.p.getByRole('button',{name:'Editar',exact:true}).count(),0);
  const first=m.p.locator('.plan-card').filter({hasText:'João Martins'}).first();await first.getByRole('button',{name:'Editar',exact:true}).click();await m.p.getByLabel('Saída prevista',{exact:true}).fill('16:00');await m.p.getByRole('button',{name:'Guardar',exact:true}).click();await m.p.locator('dialog').waitFor({state:'hidden'});assert((await first.innerText()).includes('08:00–16:00'));

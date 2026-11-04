@@ -19,9 +19,29 @@ function sanitize(state,user){
   const entries=state.entries.filter(r=>user.role==='admin'||(user.role==='worker'?r.employee===user.employeeId:allowed.has(r.project)));
   const financial=user.role!=='manager';
   const stripEntry=r=>{const out={...r};if(!financial)for(const k of ['rate','unitRate','payBasis','amount'])delete out[k];return out;};
-  return {absences:Absences.list(state,user),planning:P.list(state,user),serverNow:new Date().toISOString(),clockShifts:T.list(state,user),attachments:A.list(state,user),projectNotes:(state.projectNotes||[]).filter(n=>allowed.has(n.project)),...(user.role==='admin'?{costs:state.costs||[],costSummary:C.summary(state),clients:state.clients,charges:state.charges,receipts:state.receipts}:{}),revision:state.revision,employees:employees.map(e=>{const out={...e};if(!financial)for(const k of ['rate','payBasis'])delete out[k];return out;}),projects:projects.map(p=>{const out={...p};if(user.role!=='admin'){delete out.budget;delete out.clientId;}return out;}),entries:entries.map(stripEntry),wagePayments:user.role==='admin'?state.wagePayments:user.role==='worker'?state.wagePayments.filter(p=>p.employee===user.employeeId):[],corrections:state.corrections.filter(c=>entries.some(r=>r.id===c.entry)).map(c=>({...c,proposed:stripEntry(c.proposed),...(c.original?{original:stripEntry(c.original)}:{})}))};
+  return {absences:Absences.list(state,user),planning:P.list(state,user),serverNow:new Date().toISOString(),clockShifts:T.list(state,user),attachments:A.list(state,user),projectNotes:(state.projectNotes||[]).filter(n=>allowed.has(n.project)),...(user.role==='admin'?{inventory:(state.inventory||[]).map(lot=>({...lot,available:C.available(state,lot)})),costs:state.costs||[],costSummary:C.summary(state),clients:state.clients,charges:state.charges,receipts:state.receipts}:{}),revision:state.revision,employees:employees.map(e=>{const out={...e};if(!financial)for(const k of ['rate','payBasis'])delete out[k];return out;}),projects:projects.map(p=>{const out={...p};if(user.role!=='admin'){delete out.budget;delete out.clientId;}return out;}),entries:entries.map(stripEntry),wagePayments:user.role==='admin'?state.wagePayments:user.role==='worker'?state.wagePayments.filter(p=>p.employee===user.employeeId):[],corrections:state.corrections.filter(c=>entries.some(r=>r.id===c.entry)).map(c=>({...c,proposed:stripEntry(c.proposed),...(c.original?{original:stripEntry(c.original)}:{})}))};
 }
 function action(state,user,type,data){
+  if(type==='calendarCreate'){
+    if(!['admin','manager'].includes(user.role))fail('Só os responsáveis podem registar trabalho no calendário.',403);
+    if(!['auto','planned','approved'].includes(data.registration))fail('Escolha um tipo de registo válido.');
+    if(!Array.isArray(data.dates)||data.dates.length!==1)fail('Selecione apenas um dia no calendário.');
+    const draft=structuredClone(state),previous=new Set((draft.planning||[]).map(p=>p.id));
+    P.apply(draft,user,'planCreate',data);
+    const now=new Date(),date=now.toLocaleDateString('sv-SE',{timeZone:'Europe/Lisbon'}),time=now.toLocaleTimeString('en-GB',{timeZone:'Europe/Lisbon',hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    for(const plan of draft.planning.filter(p=>!previous.has(p.id))){
+      const ended=plan.date<date||(plan.date===date&&plan.end+':00'<time);
+      if(data.registration==='approved'&&!ended)fail('Só pode validar trabalho depois da hora de fim, em Lisboa.');
+      if(data.registration==='approved'||data.registration==='auto'&&ended){
+        action(draft,user,'work',{project:plan.project,employee:plan.employee,date:plan.date,mode:'hours',start:plan.start,end:plan.end,pause:plan.pause,note:plan.note});
+        const entry=draft.entries[draft.entries.length-1];
+        action(draft,user,'approve',{id:entry.id});
+        entry.source='weekly-calendar';
+        draft.planning=draft.planning.filter(p=>p.id!==plan.id);
+      }
+    }
+    Object.assign(state,draft);return;
+  }
   R.normalize(state);
   if(Absences.apply(state,user,type,data))return;
   if(P.apply(state,user,type,data))return;
