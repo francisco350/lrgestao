@@ -14,6 +14,7 @@ function openStore(filename){
   }
   require('./trial.cjs').init(db);
   db.exec(`CREATE TABLE IF NOT EXISTS company_profile(id INTEGER PRIMARY KEY CHECK(id=1),name TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS company_visibility(id INTEGER PRIMARY KEY CHECK(id=1), sections TEXT NOT NULL);
     INSERT OR IGNORE INTO company_profile VALUES(1,'Lino Rua Remodelações');`);
   if(filename!==':memory:')try{fs.chmodSync(filename,0o600);}catch{}
   return db;

@@ -1,11 +1,19 @@
 'use strict';
 function accountPage(){
   return heading(admin()?'Administração da empresa':'A minha conta','Consulte a sua empresa e mantenha os seus dados de acesso atualizados.')+
-    panel('Empresa','Empresa associada à sua conta.',`<div class="profile-card"><p>Nome: <strong>${esc(current.company?.name||'—')}</strong></p>${admin()?btn('Alterar nome da empresa','company-profile')+`<p>Crie contas individuais e atribua funções à sua equipa em <a class="view-link" href="#utilizadores">Utilizadores e acessos →</a></p>`:''}</div>`)+
+    panel('Empresa','Empresa associada à sua conta.',`<div class="profile-card"><p>Nome: <strong>${esc(current.company?.name||'—')}</strong></p>${admin()?btn('Alterar nome da empresa','company-profile')+btn('Secções dos colaboradores','company-sections')+`<p>Crie contas individuais e atribua funções à sua equipa em <a class="view-link" href="#utilizadores">Utilizadores e acessos →</a></p>`:''}</div>`)+
     panel('Os meus dados de acesso','Estas alterações aplicam-se apenas à sua conta.',`<div class="profile-card"><p>Nome: <strong>${esc(current.name)}</strong><br>Utilizador: <strong>${esc(current.username)}</strong><br>Perfil: <strong>${roleName[current.role]}</strong></p><div class="account-actions">${admin()?btn('Alterar utilizador','account-username'):''}${btn('Alterar palavra-passe','change-password',true)}</div></div>`).replace('class="panel"','class="panel activity-panel"');
 }
 document.addEventListener('click',event=>{
   const action=event.target.closest('[data-action]')?.dataset.action;
+  if(action==='company-sections'&&admin()){
+    const optional=routes().filter(([id])=>['resumo','trabalho','obras','planeamento','horas','pagamentos','ausencias','conta'].includes(id));
+    const labels=optional.map(([id,label])=>[id,({conta:'A minha conta',pagamentos:'Os meus pagamentos'})[id]||label]);
+    modal('Secções dos colaboradores',checks('sections','Além de Picar o ponto, mostrar aos colaboradores desta empresa',labels,current.company.workerSections),async ()=>{
+      const workerSections=['ponto',...new FormData($('#form')).getAll('sections')];
+      await api('company','POST',{workerSections});await load();toast('Secções dos colaboradores atualizadas.');
+    });
+  }
   if(action==='company-profile'&&admin())modal('Alterar nome da empresa',input('name','Nome da empresa',current.company.name,'text','required maxlength="120"',true),async data=>{
     const result=await api('company','POST',data);current.company=result.company;await load();toast('Nome da empresa atualizado.');
   });

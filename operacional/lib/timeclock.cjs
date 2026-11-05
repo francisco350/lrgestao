@@ -41,6 +41,20 @@ function dailyEntries(shift){
     start:'',end:'',pause:0,note:shift.note||'Ponto registado na aplicação',status:'approved',revision:1,createdBy:shift.createdBy
   }));
 }
+// Lisbon noon is unambiguous even on daylight-saving transition days.
+function withoutLunch(start,end){
+  const from=Date.parse(start),until=Date.parse(end),intervals=[];
+  let cursor=from;
+  function add(a,b){if(b>a)intervals.push({start:new Date(a).toISOString(),end:new Date(b).toISOString()});}
+  for(let noon=Date.parse(localDate(from)+'T12:00:00Z');noon-3600000<until;noon+=86400000){
+    const lunch=noon-(localMinute(noon)-720)*60000;
+    if(lunch+3600000<=cursor)continue;
+    add(cursor,Math.min(until,lunch));
+    cursor=Math.max(cursor,lunch+3600000);
+  }
+  add(cursor,until);
+  return intervals;
+}
 function apply(state,user,type,data,now=Date.now()){
   if(corrections.apply(state,user,type,data,now,{dailyEntries,effective}))return true;
   if(!['clockIn','clockPause','clockResume','clockOut','clockForceOut','clockApprove','clockReject'].includes(type))return false;
@@ -56,7 +70,7 @@ function apply(state,user,type,data,now=Date.now()){
     if(p.status==='Concluída')fail('Não é possível iniciar trabalho numa obra concluída.');
     if(state.clockShifts.some(s=>s.employee===person.id&&active(s)))fail('Já tem um turno aberto. Termine-o antes de iniciar outro.',409);
     state.clockShifts.push({id:crypto.randomUUID(),employee:person.id,employeeName:person.name,project:p.id,projectName:p.name,createdBy:user.id,
-      startedAt:stamp,endedAt:null,status:'working',intervals:[{start:stamp,end:null}],note:note(data.note),
+      automaticLunch:user.role==='worker'&&!!user.automaticLunch,startedAt:stamp,endedAt:null,status:'working',intervals:[{start:stamp,end:null}],note:note(data.note),
       snapshot:{unitRate:person.rate,payBasis:person.payBasis,dayHours:person.dayHours,rate:person.payBasis==='hour'?person.rate*person.dayHours:person.rate,category:person.category},
       events:[{type,at:stamp,by:user.id}]});return true;
   }
@@ -89,6 +103,9 @@ function apply(state,user,type,data,now=Date.now()){
     }else{
       if(type==='clockForceOut')shift.closeReason=reason();
       if(shift.status==='working')shift.intervals.at(-1).end=stamp;
+      if(shift.automaticLunch&&!shift.events.some(e=>e.type==='clockPause')){
+        shift.intervals=withoutLunch(shift.startedAt,stamp);
+      }
       shift.endedAt=stamp;shift.status='pending';if(data.note!==undefined)shift.note=note(data.note);
     }
   }

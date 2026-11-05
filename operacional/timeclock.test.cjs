@@ -94,3 +94,18 @@ test('API de ponto: sessões isoladas, conflitos, CSRF, persistência e auditori
   for(const event of ['clockRequestCorrection','clockApproveCorrection'])assert(events.some(e=>e.event===event));
  }finally{await app.close();assert(path.resolve(dir).startsWith(path.resolve(os.tmpdir())+path.sep+'lino-clock-'));fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('almoço automático usa apenas a interseção com 12h–13h em Lisboa e respeita as pausas picadas',()=>{
+  function minutes(start,end,pause){
+    const s=fixture(),u={...worker,automaticLunch:true};
+    act(s,u,'clockIn',{project:'o1'},start);
+    const shift=s.clockShifts[0],target={id:shift.id};
+    if(pause){act(s,u,'clockPause',target,pause[0]);act(s,u,'clockResume',target,pause[1]);}
+    act(s,u,'clockOut',target,end);
+    act(s,admin,'clockApprove',target,end);
+    return s.entries[0].minutes;
+  }
+  assert.equal(minutes('2026-11-05T08:00Z','2026-11-05T17:00Z'),480);
+  assert.equal(minutes('2026-07-05T11:30Z','2026-07-05T13:00Z'),60);
+  assert.equal(minutes('2026-11-05T08:00Z','2026-11-05T10:00Z'),120);
+  assert.equal(minutes('2026-11-05T08:00Z','2026-11-05T17:00Z',['2026-11-05T10:00Z','2026-11-05T10:15Z']),525);
+});

@@ -23,6 +23,16 @@ test('empresas: login, isolamento de dados e anexos, credenciais próprias e pra
       const first=await login(a,'lino'),second=await login(b,'empresa.b');assert.equal(first.status,200);assert.equal(second.status,200);assert.equal(first.body.user.company.id,'linorua');assert.equal(second.body.user.company.id,companyB.id);assert.equal(second.body.user.company.name,'Empresa B');
       assert.equal((await login(worker,'joao')).body.user.role,'worker');assert.equal((await state(a)).projects.length,3);assert.equal((await state(b)).projects.length,0);assert((await state(worker)).entries.every(r=>r.employee==='e2'));
     });
+    await t.test('secções dos colaboradores são configuradas por empresa',async()=>{
+      const original=(await state(b)).company.workerSections;
+      assert(original.includes('resumo'));
+      assert.deepEqual((await state(worker)).company.workerSections,['ponto']);
+      const choice={workerSections:['ponto','horas']};
+      assert.equal((await call(worker,'company','POST',choice)).status,403);
+      assert.equal((await call(a,'company','POST',choice)).status,200);
+      assert.deepEqual((await state(worker)).company.workerSections,choice.workerSections);
+      assert.deepEqual((await state(b)).company.workerSections,original);
+    });
     await t.test('cookie, cabeçalhos, IDs e campos enviados não dão acesso a outra empresa',async()=>{
       const tampered={...a,cookie:a.cookie.replace('linorua.',companyB.id+'.')};assert.equal((await call(tampered,'state')).status,401);
       assert.equal((await call(b,'state','GET',undefined,{'X-Company-Id':'linorua'})).body.projects.length,0);

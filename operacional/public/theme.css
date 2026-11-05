@@ -74,3 +74,45 @@
 [data-theme="dark"] .badge.entity-status.status-progress { background:#20354e; color:#b5d6ff; border-color:#43658c; }
 [data-theme="dark"] .badge.entity-status.status-planned { background:#42351e; color:#f4d18d; border-color:#80683b; }
 [data-theme="dark"] .badge.entity-status.status-inactive { background:#30363f; color:#c5cedb; border-color:#586370; }
+
+.clock-buttons .btn[data-action] {font-size:1.1rem;font-weight:700;min-height:48px;padding:.7rem 1.15rem;}
+.clock-buttons .btn[data-action="clock-out"] {background:#a52728;color:white;border-color:#a52728;}
+.clock-buttons .btn[data-action="clockPause"] {background:#ffd578;color:#382600;border-color:#b97b12;}
+.clock-buttons .btn[data-action="clockResume"] {background:#176446;color:white;border-color:#176446;}
+
+.clock-entry {
+  grid-template-columns: minmax(0, 2fr) minmax(12rem, 1fr);
+  padding: clamp(1.25rem, 3.5vw, 2.75rem);
+}
+.clock-entry h2 { font-size: clamp(1.65rem, 3vw, 2rem); }
+.clock-entry .field { max-width: 42rem; margin: 1.25rem 0; font-size: 1rem; gap: .5rem; }
+.clock-entry .field select, .clock-entry .field textarea {
+  font: inherit;
+  font-weight: 400;
+  line-height: 1.45;
+  padding: .75rem;
+}
+.clock-entry .btn { font-size: 1rem; }
+@media (max-width: 760px) {
+  .clock-entry { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+}
+
+.clock-entry .field select, .clock-entry .field textarea {
+  box-sizing: border-box;
+  min-height: 3.125rem;
+  height: 3.125rem;
+}
+.clock-entry .field:has(select) { position: relative; }
+.clock-entry .field select { appearance: none; padding-right: 2.75rem; }
+.clock-entry .field:has(select)::after {
+  content: "";
+  position: absolute;
+  right: 1.1rem;
+  bottom: 1.5625rem;
+  width: .55rem;
+  height: .55rem;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: translateY(25%) rotate(45deg);
+  pointer-events: none;
+}

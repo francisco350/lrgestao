@@ -8,7 +8,13 @@ const JSON_LIMIT=65536,SESSION_HOURS=8;
 function createApplication({database=path.join(__dirname,'data','lino.sqlite'),origin='http://127.0.0.1:4174',production=false,companyId='',usernameAvailable=()=>true}={}){
   const configured=new URL(origin);if(production&&configured.protocol!=='https:')throw Error('Em produção, APP_ORIGIN deve usar HTTPS.');
   const db=openStore(database);const cookieName=production?'__Host-lino_session':'lino_session';let hashesInFlight=0,uploadsInFlight=0;const attachmentsDirectory=database+'.files';
-  const company=()=>({id:companyId||'local',name:db.prepare('SELECT name FROM company_profile WHERE id=1').get().name});
+  const workerSections=['resumo','ponto','trabalho','obras','planeamento','horas','pagamentos','ausencias','conta'];
+  const lino=!companyId||companyId==='linorua';
+  function company(){
+    const saved=db.prepare('SELECT sections FROM company_visibility WHERE id=1').get();
+    return {id:companyId||'local',name:db.prepare('SELECT name FROM company_profile WHERE id=1').get().name,
+      workerSections:saved?JSON.parse(saved.sections):(lino?['ponto']:workerSections),automaticLunch:lino};
+  }
   const presentUser=row=>({...publicUser(row),company:company()});
   const prefix=companyId?companyId+'.':'';
   const checkUsername=(username,exceptId)=>{if(!usernameAvailable(username,exceptId))D.fail('Este utilizador já está em uso. Escolha outro nome.');};
@@ -58,7 +64,14 @@ function createApplication({database=path.join(__dirname,'data','lino.sqlite'),o
           requireAdmin(s);
           if(req.method==='GET')return json(res,200,{company:company()});
           if(req.method!=='POST')D.fail('Método não suportado.',405);
-          const input=await body(req),name=D.text(input.name,120);requireAdmin(authenticated(req));
+          const input=await body(req);requireAdmin(authenticated(req));
+          if(input.workerSections!==undefined){
+            const sections=input.workerSections;
+            if(!Array.isArray(sections)||!sections.includes('ponto')||sections.some(id=>!workerSections.includes(id)))D.fail('Seleção de secções inválida.');
+            db.prepare('INSERT OR REPLACE INTO company_visibility VALUES(1,?)').run(JSON.stringify([...new Set(sections)]));
+            return json(res,200,{company:company()});
+          }
+          const name=D.text(input.name,120);
           db.exec('BEGIN IMMEDIATE');try{db.prepare('UPDATE company_profile SET name=? WHERE id=1').run(name);audit(db,s.id,'company_updated');db.exec('COMMIT');}catch(error){db.exec('ROLLBACK');throw error;}
           return json(res,200,{company:company()});
         }
@@ -86,9 +99,9 @@ function createApplication({database=path.join(__dirname,'data','lino.sqlite'),o
           const preview=url.searchParams.get('preview')==='1'&&file.mime.startsWith('image/');
           res.writeHead(200,{'Content-Type':file.mime,'Content-Length':bytes.length,'Cache-Control':'private, no-store','Content-Security-Policy':"sandbox; default-src 'none'",'X-Frame-Options':'DENY','Content-Disposition':(preview?'inline':'attachment')+"; filename*=UTF-8''"+encodeURIComponent(file.name)});res.end(bytes);return;
         }
-        if(req.method==='GET'&&url.pathname==='/api/state')return json(res,200,D.sanitize(readState(db),user));
+        if(req.method==='GET'&&url.pathname==='/api/state')return json(res,200,{...D.sanitize(readState(db),user),company:company()});
         if(req.method==='POST'&&url.pathname==='/api/action'){
-          const input=await body(req);const fresh=authenticated(req);const revision=mutate(db,input.revision,fresh.id,String(input.type).slice(0,50),state=>D.action(state,publicUser(fresh),input.type,input.data||{}));return json(res,200,{ok:true,revision});
+          const input=await body(req);const fresh=authenticated(req);const revision=mutate(db,input.revision,fresh.id,String(input.type).slice(0,50),state=>D.action(state,{...publicUser(fresh),automaticLunch:lino},input.type,input.data||{}));return json(res,200,{ok:true,revision});
         }
         if(url.pathname==='/api/users'){
           requireAdmin(s);

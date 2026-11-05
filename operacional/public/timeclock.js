@@ -24,7 +24,10 @@ function clockView(){
   }else if(!eligible.length){card='<details class="notice info-disclosure"><summary>Informação</summary><div>Não tem obras disponíveis para picar o ponto. Peça ao responsável para confirmar a sua associação à equipa da obra.</div></details>';}
   else{
     if(!eligible.some(p=>p.id===clockProject))clockProject=eligible[0].id;
-    card=`<section class="clock-card"><div><span class="eyebrow">PRONTO PARA COMEÇAR</span><h2>Em que obra vai trabalhar?</h2><p>${esc(employee.name)} · A entrada é registada ao confirmar.</p><form id="clock-in-form">${select('project','Obra para picar o ponto',eligible.map(p=>[p.id,p.name]),clockProject,true)}<button class="btn primary" type="submit">Iniciar trabalho</button></form></div><div class="clock-explainer"><strong>Entrada → pausas → saída</strong><p>Para mudar de obra, termine este turno e inicie outro na nova obra. As horas ficam disponíveis para validação do responsável.</p></div></section>`;
+    card=`<section class="clock-card clock-entry"><div><span class="eyebrow">PRONTO PARA COMEÇAR</span><h2>Em que obra vai trabalhar?</h2><p>${esc(employee.name)} · A entrada é registada ao confirmar.</p><form id="clock-in-form">${select('project','Obra para picar o ponto',eligible.map(p=>[p.id,p.name]),clockProject,true)}<label class="field">Trabalho previsto (opcional)<textarea name="note" rows="1" maxlength="200"></textarea></label><button class="btn primary" type="submit">Iniciar trabalho</button></form></div><div class="clock-explainer"><strong>Entrada → pausas → saída</strong><p>Para mudar de obra, termine este turno e inicie outro na nova obra. As horas ficam disponíveis para validação do responsável.</p></div></section>`;
+  }
+  if(current.role==='worker'&&visibleWorkerSections()?.length===1){
+    return heading('Picar o ponto',current.company?.automaticLunch?'Se não registar pausas, ao terminar descontamos o tempo do turno entre as 12h e as 13h.':'Escolha a obra para registar o seu turno.')+card;
   }
   const rows=shifts.filter(s=>clockFilter==='all'||(clockFilter==='active'?clockOpen(s):s.status===clockFilter)).sort((a,b)=>b.startedAt.localeCompare(a.startedAt));
   return heading('Picar o ponto','Registe o seu trabalho por obra. Horas apresentadas no fuso de Lisboa.',btn('Atualizar','refresh'))+card+
@@ -43,7 +46,8 @@ function clockDetails(id){
 async function clockChange(type,data){try{await change(type,data);}catch(error){if(error.status===409)await load();throw error;}}
 document.addEventListener('submit',async e=>{
   if(e.target.id!=='clock-in-form')return;e.preventDefault();const button=e.target.querySelector('button');button.disabled=true;
-  try{await clockChange('clockIn',{project:new FormData(e.target).get('project')});}catch(error){toast(error.message);}finally{button.disabled=false;}
+  const fields=new FormData(e.target);
+  try{await clockChange('clockIn',{project:fields.get('project'),note:fields.get('note')});}catch(error){toast(error.message);}finally{button.disabled=false;}
 });
 document.addEventListener('change',e=>{if(e.target.name==='clock-status'){clockFilter=e.target.value;render();}if(e.target.closest('#clock-in-form')&&e.target.name==='project')clockProject=e.target.value;});
 document.addEventListener('click',async e=>{
@@ -52,7 +56,9 @@ document.addEventListener('click',async e=>{
     case'open-clock':location.hash='ponto';if(id)clockDetails(id);break;
     case'project-clock':clockOwner=current.id;clockProject=id;location.hash='ponto';break;
     case'clockPause':case'clockResume':case'clockApprove':el.disabled=true;try{await clockChange(el.dataset.action,{id});}finally{el.disabled=false;}break;
-    case'clock-out':modal('Terminar turno',input('note','Trabalho realizado / observação',state.clockShifts.find(s=>s.id===id)?.note||'','text','maxlength="200"',true),d=>clockChange('clockOut',{id,note:d.note}),'A saída será registada ao guardar. O turno será enviado para validação.');break;
+    case'clock-out':if(current.role==='worker'&&visibleWorkerSections()?.length===1){
+      el.disabled=true;try{await clockChange('clockOut',{id});toast('Turno terminado.');}finally{el.disabled=false;}break;
+    }modal('Terminar turno',input('note','Trabalho realizado / observação',state.clockShifts.find(s=>s.id===id)?.note||'','text','maxlength="200"',true),d=>clockChange('clockOut',{id,note:d.note}),'A saída será registada ao guardar. O turno será enviado para validação.');break;
     case'clock-reject':modal('Rejeitar turno',input('reason','Motivo da rejeição','','text','required maxlength="200"',true),d=>clockChange('clockReject',{id,reason:d.reason}),'As picagens são preservadas. Se necessário, introduza o horário correto em Registos de trabalho.');break;
     case'clock-force-out':modal('Fechar turno aberto',input('reason','Motivo do fecho','','text','required maxlength="200"',true),d=>clockChange('clockForceOut',{id,reason:d.reason}),'A saída fica registada com a hora atual. Confirme o horário antes de validar; se estiver incorreto, rejeite o turno e registe o trabalho manualmente.');break;
     case'clock-detail':clockDetails(id);break;
