@@ -43,11 +43,31 @@ const routes=()=>[
   ...(admin()?[['utilizadores','Utilizadores e acessos','⊞'],['historico','Histórico','↺']]:[]),
   ['conta',admin()?'Administração da empresa':'A minha conta','○']
 ].filter(([id])=>current.role!=='worker'||(visibleWorkerSections()?.includes(id)??true));
+function sidebarLinks(){
+  const available=new Map(routes().map(route=>[route[0],route]));
+  function link(id){
+    const route=available.get(id);
+    if(!route)return '';
+    const active=page===id?' class="active" aria-current="page"':'';
+    return `<a href="#${id}"${active}><span aria-hidden="true">${route[2]}</span>${esc(route[1])}</a>`;
+  }
+  const groups=[
+    ['Trabalho e equipa',['planeamento','ponto','trabalho','horas','equipa','ausencias']],
+    ['Obras e recursos',['obras','clientes','inventario']],
+    ['Finanças',['custos','pagamentos','recebimentos']],
+    [admin()?'Administração':'Conta',['utilizadores','historico','conta']]
+  ];
+  return link('resumo')+groups.map(([title,ids])=>{
+    const links=ids.map(link).join('');
+    if(!links||available.size===1)return links;
+    return `<div class="nav-group" role="group" aria-label="${title}"><div class="nav-group-title" aria-hidden="true">${title}</div>${links}</div>`;
+  }).join('');
+}
 function heading(title,subtitle,actions=''){return `<section class="page-heading"><div><span class="eyebrow">GESTÃO DE OBRAS</span><h1>${title}</h1><p>${subtitle}</p></div><div class="actions">${actions}</div></section>`;}
 function panel(title,description,body){return `<section class="panel"><div class="panel-head"><div><h2>${title}</h2><p>${description}</p></div></div>${body}</section>`;}
 function table(heads,rows){return `<div class="table-wrap"><table><thead><tr>${heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td colspan="${heads.length}"><div class="empty">Sem registos para mostrar.</div></td></tr>`}</tbody></table></div>`;}
 function stat(label,value,note){return `<div class="stat"><div class="stat-top">${label}</div><div class="stat-value">${value}</div><div class="stat-note">${note}</div></div>`;}
-function shell(){root.innerHTML=`<aside class="sidebar"><a class="brand" href="#resumo">${brandMark()}</a><div class="workspace"><div>${esc(current.name)}<small>${roleName[current.role]}</small></div><span class="online"></span></div><div class="nav-label">ESPAÇO DE TRABALHO</div><nav>${routes().map(([id,label,i])=>`<a href="#${id}" class="${page===id?'active':''}" ${page===id?'aria-current="page"':''}><span aria-hidden="true">${i}</span>${label}</a>`).join('')}</nav><div class="sidebar-bottom"><div class="demo-pill"><span></span>LR Gestão · 0.14</div><p>Contas individuais e informação guardada no servidor.</p><button class="reset-link" data-action="logout">Terminar sessão ↗</button></div></aside><div class="main"><header class="topbar"><div class="breadcrumb">Espaço de trabalho <span>/</span><strong>${routes().find(r=>r[0]===page)?.[1]||'Conta'}</strong></div><div class="top-actions">${window.LinoTheme.button()}<span class="profile-label name">${esc(current.name)}</span><span class="account-role">${roleName[current.role]}</span><span class="avatar">${esc(initials(current.name))}</span><button class="btn small" data-action="refresh" aria-label="Atualizar dados">↻</button><button class="btn small" data-action="logout">Sair</button></div></header><main id="app"></main><footer><span>${esc(current.company?.name||"LR Gestão")}</span><span>Gestão de obras · Sem emissão de faturas</span></footer></div>`;if(current.mustChangePassword)$('#app').innerHTML=heading('A sua conta','Altere a palavra-passe provisória para ativar o acesso.');}
+function shell(){root.innerHTML=`<aside class="sidebar"><a class="brand" href="#resumo">${brandMark()}</a><div class="workspace"><div>${esc(current.name)}<small>${roleName[current.role]}</small></div><span class="online"></span></div><nav aria-label="Menu principal">${sidebarLinks()}</nav><div class="sidebar-bottom"><div class="demo-pill"><span></span>LR Gestão · 0.14</div><p>Contas individuais e informação guardada no servidor.</p><button class="reset-link" data-action="logout">Terminar sessão ↗</button></div></aside><div class="main"><header class="topbar"><div class="breadcrumb">Espaço de trabalho <span>/</span><strong>${routes().find(r=>r[0]===page)?.[1]||'Conta'}</strong></div><div class="top-actions">${window.LinoTheme.button()}<span class="profile-label name">${esc(current.name)}</span><span class="account-role">${roleName[current.role]}</span><span class="avatar">${esc(initials(current.name))}</span><button class="btn small" data-action="refresh" aria-label="Atualizar dados">↻</button><button class="btn small" data-action="logout">Sair</button></div></header><main id="app"></main><footer><span>${esc(current.company?.name||"LR Gestão")}</span><span>Gestão de obras · Sem emissão de faturas</span></footer></div>`;if(current.mustChangePassword)$('#app').innerHTML=heading('A sua conta','Altere a palavra-passe provisória para ativar o acesso.');}
 function render(){if(!current)return login();let next=location.hash.slice(1)||'resumo';const detail=next.startsWith('obra/');if(detail)next='obras';if(!routes().some(r=>r[0]===next))next=routes()[0][0];if(page!==next){page=next;query='';}shell();$('#app').innerHTML=detail&&page==='obras'?projectDetail(location.hash.slice(6)):({resumo:home,planeamento:planningView,ausencias:absencesView,horas:hoursView,ponto:clockView,inventario:inventoryView,custos:costsView,clientes:clientView,recebimentos:receivablesView,equipa:team,obras:projects,trabalho:work,pagamentos:payroll,utilizadores:userView,historico:auditView,conta:account}[page])();}
 function home(){return overview();}
 function team(){return heading('A sua equipa','Cada pessoa com a sua função e responsabilidade.',admin()?btn('+ Adicionar funcionário','new-employee',true):'')+panel('Funcionários','As alterações à remuneração preservam os valores dos registos anteriores.',searchableDirectory('equipa',{
