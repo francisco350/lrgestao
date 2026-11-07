@@ -36,7 +36,7 @@
     if(role==='admin'){
       for(const r of state.receipts||[])add('recebimentos',r,{title:client(r.clientId),detail:project(r.project),value:r.amount,status:r.voided?'Anulado':'Recebido',tone:r.voided?'gray':'',href:'#recebimentos'});
       for(const c of state.charges||[]){const paid=money((state.receipts||[]).filter(r=>r.charge===c.id&&!r.voided).reduce((s,r)=>s+r.amount,0));add('cobrancas',c,{title:client(c.clientId),detail:c.description,value:c.amount,status:c.voided?'Anulada':paid>=c.amount?'Liquidada':paid>0?'Parcial':'Por receber',tone:c.voided?'gray':paid<c.amount?'amber':'',href:'#recebimentos'},null);}
-      for(const c of state.costs||[])add('custos',c,{title:c.description,detail:project(c.project),value:c.amount,status:c.voided?'Anulado':c.kind==='material'?'Material':'Despesa',tone:c.voided?'gray':'',href:'#custos'});
+      for(const c of state.costs||[])add('custos',c,{title:c.description,detail:c.project===null?'Custos gerais':project(c.project),value:c.amount,status:c.voided?'Anulado':c.kind==='material'?'Material':'Despesa',tone:c.voided?'gray':'',href:'#custos'});
       for(const c of state.clients||[])add('clientes',c,{title:c.name,detail:'Ficha do cliente',status:c.active?'Ativo':'Inativo',tone:c.active?'':'gray',href:'#clientes'},null);
       for(const e of state.employees)add('equipa',e,{title:e.name,detail:e.category,status:e.active?'Ativo':'Inativo',tone:e.active?'':'gray',href:'#equipa'},null);
     }

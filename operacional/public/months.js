@@ -10,6 +10,7 @@ function currentMonthRange(){return monthRange(today().slice(0,7));}
 function monthFor(section) {
   let range;
   if(section==='pagamentos') range={from:start,until:end};
+  if(section==='obra') range=financeRange;
   if(section==='custos') range={from:costFrom,until:costUntil};
   if(section==='recebimentos') range=receiptRange;
   if(section==='trabalho') range=workFilter;
@@ -22,6 +23,7 @@ function setMonth(section,month) {
   selectedMonths.set(section,month);
   const {from,until}=monthRange(month);
   if(section==='pagamentos'){start=from||'0001-01-01';end=until||today();}
+  if(section==='obra')financeRange={from,until};
   if(section==='custos'){costFrom=from;costUntil=until;}
   if(section==='recebimentos')receiptRange={from,until};
   if(section==='trabalho'){checkWorkScope();Object.assign(workFilter,{from,until});}
@@ -29,7 +31,7 @@ function setMonth(section,month) {
 }
 function monthPicker(section, extraFilters='') {
   const month=monthFor(section);
-  const customRange=(section==='recebimentos'&&(receiptRange.from||receiptRange.until))||
+  const customRange=(section==='obra'&&(financeRange.from||financeRange.until))||(section==='recebimentos'&&(receiptRange.from||receiptRange.until))||
     (section==='custos'&&(costFrom||costUntil))||
     (section==='trabalho'&&(workFilter.from||workFilter.until))||
     (section==='pagamentos'&&start!=='0001-01-01');

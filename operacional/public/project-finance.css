@@ -1,0 +1,44 @@
+.project-monthly{margin:24px 0 32px;min-width:0}
+.project-finance-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.project-finance-heading h2{margin:0 0 6px;font-size:22px}
+.project-finance-heading span{font-size:13px;color:var(--muted,#718168)}
+.project-finance-actions{display:flex;gap:10px;flex-wrap:wrap}
+.project-finance-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+.finance-result-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.finance-result-stats .stat{min-width:0}
+.finance-result-stats .stat-note{line-height:1.6}
+@media(max-width:600px){.finance-result-stats{grid-template-columns:1fr}}
+.project-finance-stats .stat-value{font-size:28px;overflow-wrap:anywhere}
+.project-finance-stats .stat{min-width:0}
+.project-monthly .panel{margin-bottom:20px}
+.project-monthly .row-actions{display:flex;gap:8px;flex-wrap:wrap}
+.project-monthly .finance-total td{font-weight:700;border-top:2px solid var(--line,#dfe5d7)}
+#project-payment-fields[hidden],#project-payment-fields label[hidden]{display:none}
+.project-finance-navigation,.finance-jumps{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 20px}
+.project-finance-navigation .selected{background:var(--green,#1d493b);border-color:var(--green,#1d493b);color:#fff}
+.finance-filters{display:flex;align-items:end;gap:18px;flex-wrap:wrap;margin:20px 0}
+.finance-filters .month-filter{flex:2 1 480px;margin:0}
+.finance-project-field{flex:1 1 260px;min-width:0;max-width:100%}
+.finance-project-field select{width:100%;min-width:0;padding:12px;border:1px solid var(--line,#dfe5d7);border-radius:7px;font:inherit;font-size:13px;background:var(--surface-input,#fff);color:var(--ink,#233b33)}
+.finance-scope{font-size:12px;line-height:1.6;color:var(--muted,#718168)}
+.finance-jumps{margin-top:12px}
+[id^=finance-]{scroll-margin-top:24px}
+@media(max-width:1100px){.project-finance-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.project-finance-actions{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.project-finance-actions .btn{min-width:0;white-space:normal;padding:12px 8px}.project-finance-stats{grid-template-columns:1fr}.project-finance-stats .stat-value{font-size:26px}}
+
+.finance-cost-summary .panel-head h2{margin:0;font-size:16px}
+.finance-contract{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px;border-bottom:1px solid var(--line,#dfe5d7)}
+.finance-contract span{font-size:14px;font-weight:600}
+.finance-contract small{display:block;margin-top:6px;color:var(--muted,#718168);font-size:12px}
+.finance-contract strong{font-size:24px;white-space:nowrap}
+.finance-cost-composition{padding:20px 24px}
+.finance-cost-composition h3{margin:0 0 18px;font-size:14px}
+.finance-cost-composition dl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin:0}
+.finance-cost-composition dt{font-size:12px;color:var(--muted,#718168)}
+.finance-cost-composition dd{margin:8px 0 0;font-size:21px;font-weight:600;overflow-wrap:anywhere}
+.finance-cost-total{border-left:1px solid var(--line,#dfe5d7);padding-left:20px}
+.finance-payment-review{border-top:1px solid var(--line,#dfe5d7);padding:16px 24px;font-size:12px;line-height:1.7}
+.finance-payment-review summary{cursor:pointer;font-weight:600}
+.finance-payment-review div{margin-top:10px;color:var(--muted,#718168)}
+@media(max-width:900px){.finance-cost-composition dl{grid-template-columns:repeat(2,minmax(0,1fr))}.finance-cost-total{border-left:0;padding-left:0}}
+@media(max-width:480px){.finance-contract{align-items:flex-start;flex-direction:column}.finance-contract,.finance-cost-composition,.finance-payment-review{padding:18px}.finance-cost-composition dd{font-size:19px}}

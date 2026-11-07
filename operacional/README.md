@@ -199,3 +199,18 @@ Percurso sugerido: **Obras** → abrir uma obra concluída → **Mapa de horas**
 Na raiz, `npm test` executa os testes do modelo e da API. `npm run future:test:browser` requer Playwright e um navegador instalado; usa Edge por defeito ou `BROWSER_CHANNEL=chrome`. Cria uma base temporária própria, quatro contas de teste e três contextos de navegador isolados. Os testes nunca alteram a base de demonstração.
 
 São verificados acesso anónimo, credenciais, origem/CSRF, restrições de funcionário e obra, campos financeiros, tentativas de elevação de perfil, validação entre sessões, correções, conflitos, pagamentos, troca obrigatória de palavra-passe, revogação de sessões, persistência após reinício, cópia/restauro, exportação e navegação móvel.
+
+
+## Contas integradas na secção Obras
+
+Dentro de **Obras**, o administrador acede a **Contas mensais** e a **Ver contas** de cada obra, com escolha de obra, mês (atual por predefinição) e intervalo personalizado. O resumo mostra Por receber, Recebido, Por pagar e Pago. A secção Contrato e custos apresenta o valor total do contrato e a composição dos custos do período (materiais, outras despesas, mão de obra e total). Sem obra selecionada (`#obras/contas`), mostra as contas das obras e os custos gerais. Os endereços antigos de contas continuam a funcionar dentro de Obras. Os botões Ver contas na lista de obras e nos custos abrem a mesma página (`#obra/<id>/contas`), mantendo Obras ativa no menu. A ligação Ficha e equipa permite consultar os dados operacionais e regressar às contas mantendo o período.
+
+Na página de contas é possível adicionar materiais e despesas (incluindo gasóleo), criar cobranças e registar recebimentos. A secção global Materiais e despesas mantém os seus formulários e vistas, com acesso direto às contas completas. Os custos são partilhados entre as duas secções. Os pagamentos de materiais e despesas têm uma identificação explícita; a diferença entre custos e pagamentos não é apresentada como dívida da equipa.
+
+Os novos custos criados na ficha podem ficar por pagar, totalmente pagos ou parcialmente pagos. Cada pagamento guarda valor, data, método, autor e eventual anulação. Numerário, transferência, MB WAY e outros métodos são apresentados separadamente para entradas e saídas. Pagamentos não criam um segundo custo. Para anular um custo com pagamentos é necessário anular primeiro os pagamentos na ficha.
+
+Os custos seguem a data do custo e os movimentos de dinheiro seguem a data do pagamento/recebimento. Os saldos no fecho transportam pendências anteriores e excluem pagamentos posteriores. Custos antigos sem informação de pagamento ficam por confirmar; não são tratados automaticamente como dívida. Saídas de inventário mantêm o custo de consumo, sem criarem dívida ao fornecedor. Os pagamentos à equipa continuam sem distribuição por obra, pelo que as saídas nesta vista dizem respeito a materiais e despesas. A mão de obra validada continua incluída nos custos.
+
+Validação: `node --test operacional/project-finance.test.cjs` e `node operacional/project-finance.browser.cjs` (Playwright e Edge; aceita PLAYWRIGHT_MODULE). O teste de navegador usa dados temporários, verifica persistência após reinício e testa 1440, 768 e 390 px nos dois temas.
+
+Os custos gerais são despesas sem obra associada, como combustível de utilização geral. São registados em Obras → Contas mensais → Custo geral, com pagamentos totais ou parciais, método e data. Entram uma única vez no total mensal da empresa e não são distribuídos automaticamente pelas obras. O estado das cobranças é apresentado como Por receber, Parcialmente recebida, Recebida ou Anulada, tendo em conta os movimentos até ao fim do período consultado.

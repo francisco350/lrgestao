@@ -1,4 +1,43 @@
-:root { color-scheme: light; }
+:root {
+  color-scheme: light;
+  --surface: #ffffff;
+  --surface-raised: #e5ece5;
+  --surface-input: #ffffff;
+  --ink: #233b33;
+  --secondary: #344c40;
+  --muted: #526457;
+  --line: #b6c5b9;
+  --row-alternate: #f1f5f0;
+  --row-hover: #e3ede1;
+  background: #e4eae2;
+}
+
+/* Keep supporting text readable and distinguish data surfaces from the canvas. */
+:is(.topbar, .stat, .panel, .report-period, .project-hero, .plan-card, dialog) {
+  background: var(--surface); border-color: var(--line);
+}
+:is(.stat, .panel, .report-period, .project-hero, .plan-card) {
+  box-shadow: 0 2px 6px #172f290a;
+}
+:is(td, .field, .checklist label, .range-field, .filter-foot, .timeline, .activity-row p, .clock-card p, .clock-notice p, .clock-period legend, .secret-title) { color: var(--secondary); }
+:is(.eyebrow, .boot, .breadcrumb, .breadcrumb span, .profile-label.name, .account-role, .stat-top, .stat-note, .panel-head p, td small, .panel-foot, .progress-label, .payment-meta small, .meeting-card p, .activity-row time, .muted, .empty, .report-value small, footer, .form-help, .storage-note, .login-card>p, .login-foot, .api-note, .profile-card p, .mobile-note, .field.full p, .attention-item p, .project-hero dt, .project-financial dt, .project-financial p, .project-notes small, .attachment-info small, .clock-correction-card small, .hours-period small, .hours-grid th small, .plan-card small, .plan-empty, .period) { color: var(--muted); }
+:is(th, .hours-grid thead th, .hours-grid tfoot th, .hours-grid tfoot td) {
+  background: var(--surface-raised); color: var(--secondary); font-weight: 700;
+}
+:is(td, th, .attention-item, .project-notes article, .attachment-card, .clock-correction-card, .clock-period, .hours-period, .hours-grid tr>:first-child) { border-color: var(--line); }
+.hours-grid tbody tr>:first-child { background: var(--surface); }
+:is(input, select, textarea, .field input, .field select, .field textarea, .range-field input, .cost-filters select, .attachment-toolbar select, .toolbar select, .top-actions select, .search) {
+  background: var(--surface-input); color: var(--ink); border-color: var(--line);
+}
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
+:is(.btn, .icon-button) { border-color: var(--line); }
+:root:not([data-theme="dark"]) :is(.panel-count, .permission-chip, .badge) { color: #3e5e2b; }
+:root:not([data-theme="dark"]) .badge.amber { color: #795112; }
+:root:not([data-theme="dark"]) .badge.gray { color: #4f5c48; }
+:root:not([data-theme="dark"]) .badge.red { color: #923f2b; }
+:root:not([data-theme="dark"]) :is(.hours-pending, .balance-negative, .payment-amount small) { color: #795112; }
+.sidebar .nav-label, .sidebar-bottom p, .workspace small { color: #b4c9bb; }
+.login-story .eyebrow { color: #bfd9ae; }
 .theme-toggle { min-height: 36px; }
 .theme-toggle svg { flex-shrink: 0; }
 .login-theme { display: flex; justify-content: flex-end; margin-bottom: 24px; }
@@ -14,16 +53,18 @@
 /* Shared surfaces and status colours cover every operational module. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --surface: #1b2923;
-  --surface-raised: #25362d;
-  --surface-input: #15221c;
-  --ink: #e3ece3;
-  --secondary: #b4c4b7;
-  --muted: #a6b7aa;
-  --line: #3a4d40;
+  --surface: #23372e;
+  --surface-raised: #354e40;
+  --surface-input: #14231b;
+  --ink: #f1f6f1;
+  --secondary: #e0ebe2;
+  --muted: #c2d2c5;
+  --line: #607b68;
+  --row-alternate: #2a4034;
+  --row-hover: #3b5645;
   --green: #3c7055;
   --orange: #e7ba77;
-  background: #111b18;
+  background: #0e1914;
   color: var(--ink);
 }
 [data-theme="dark"] :is(.topbar, .stat, .panel, .report-period, .project-hero, .plan-card, dialog) {
@@ -43,12 +84,11 @@
 [data-theme="dark"] :is(td strong, .breadcrumb strong, .payment-meta strong, .payment-amount, .form-preview strong, .dashboard-banner strong, .hours-grid tbody th) { color: var(--ink); }
 [data-theme="dark"] :is(.eyebrow, .boot, .breadcrumb, .breadcrumb span, .profile-label.name, .account-role, .stat-top, .stat-note, .panel-head p, td small, .panel-foot, .progress-label, .payment-meta small, .meeting-card p, .activity-row time, .muted, .empty, .report-value small, footer, .form-help, .storage-note, .login-card>p, .login-foot, .api-note, .profile-card p, .mobile-note, .field.full p, .attention-item p, .project-hero dt, .project-financial dt, .project-financial p, .project-notes small, .attachment-info small, .clock-correction-card small, .hours-period small, .hours-grid th small, .plan-card small, .plan-empty) { color: var(--muted); }
 [data-theme="dark"] :is(th, .hours-grid thead th, .hours-grid tfoot th, .hours-grid tfoot td) { background: var(--surface-raised); color: var(--secondary); }
-[data-theme="dark"] .hours-grid tbody tr>:first-child { background: var(--surface); }
 [data-theme="dark"] :is(td, th, .attention-item, .project-notes article, .attachment-card, .clock-correction-card, .clock-period, .hours-period, .hours-grid tr>:first-child, .activity-dot) { border-color: var(--line); }
 [data-theme="dark"] :is(.avatar, .stat-icon, .project-icon, .panel-count, .icon-button, .progress, .checklist, .attachment-pdf, .attachment-card img, .clock-comparison section, .plan-day, .plan-cancelled) {
   background: var(--surface-raised); color: var(--secondary); border-color: var(--line);
 }
-[data-theme="dark"] .clickable:hover { background: var(--surface-raised); }
+[data-theme="dark"] .clickable:hover { background: var(--row-hover); }
 [data-theme="dark"] :is(.badge, .permission-chip, .form-preview, .future-banner, .dashboard-banner, .secret-box, .meeting-card, .clock-card, .clock-notice, .tabs .btn.selected) {
   background: #263d2d; color: #bfd9ae; border-color: #52694a;
 }
@@ -132,3 +172,28 @@
   .nav-group a { grid-row: 2; }
   .nav-group { border-inline-start: 1px solid #466053; padding-inline-start: 4px; }
 }
+
+:root .settlement-paid { color: #17653a; font-weight: 700; }
+:root .settlement-due { color: #ac2929; font-weight: 700; }
+:root[data-theme="dark"] .settlement-paid { color: #a3e9b8; }
+:root[data-theme="dark"] .settlement-due { color: #ffb5ae; }
+:root .table-wrap td:is(.settlement-paid, .settlement-due) small { color: inherit; }
+.work-team-table th:last-child, .work-team-table td:last-child { width: 1%; white-space: nowrap; }
+.work-team-table .work-detail { max-width: 220px; margin-top: 5px; white-space: normal; }
+.work-team-table .work-detail summary { width: fit-content; cursor: pointer; color: var(--muted); font-size: 10px; }
+.work-team-table .work-detail p { margin: 7px 0 0; overflow-wrap: anywhere; line-height: 1.5; }
+
+/* Shared status palette: visible in both themes, with the status always written. */
+:root .badge:is(.green,.amber,.red,.gray,.blue,.purple) { border: 1px solid; font-weight: 700; }
+:root .badge.green { background: #e3f4e8; color: #205d36; border-color: #8bbf9a; }
+:root .badge.amber { background: #fff0cb; color: #76500b; border-color: #c9a557; }
+:root .badge.red { background: #fce3e1; color: #962c29; border-color: #d99b96; }
+:root .badge.gray { background: #e9edf0; color: #465260; border-color: #aab4bf; }
+:root .badge.blue { background: #e0edff; color: #20538b; border-color: #8eb1dd; }
+:root .badge.purple { background: #eee5fa; color: #69408b; border-color: #b69acb; }
+:root[data-theme="dark"] .badge.green { background: #244a33; color: #b9f1ca; border-color: #6caa7f; }
+:root[data-theme="dark"] .badge.amber { background: #4b3b1b; color: #ffe0a0; border-color: #b59a55; }
+:root[data-theme="dark"] .badge.red { background: #522d2b; color: #ffcbc5; border-color: #bf827a; }
+:root[data-theme="dark"] .badge.gray { background: #35404c; color: #d6dfe9; border-color: #8695a6; }
+:root[data-theme="dark"] .badge.blue { background: #253e5b; color: #c1deff; border-color: #729ac8; }
+:root[data-theme="dark"] .badge.purple { background: #453153; color: #ead0ff; border-color: #ad87c5; }

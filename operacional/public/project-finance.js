@@ -1,0 +1,135 @@
+'use strict';
+let financeRange=currentMonthRange();
+function projectFinanceNavigation(id,active){
+  return `<nav class="project-finance-navigation" aria-label="Secções da obra"><a class="btn ${active==='accounts'?'selected':''}" ${active==='accounts'?'aria-current="page"':''} href="#obra/${esc(id)}/contas">Contas da obra</a><a class="btn ${active==='details'?'selected':''}" ${active==='details'?'aria-current="page"':''} href="#obra/${esc(id)}">Ficha e equipa</a></nav>`;
+}
+function openProjectAccounts(id){
+  if(location.hash==='#custos')financeRange={from:costFrom,until:costUntil};
+  location.hash=id?'obra/'+id+'/contas':'obras/contas';
+}
+function projectAccountsPage(id=''){
+  if(!admin())return '';
+  const p=id?worksite(id):null;
+  if(id&&!p)return heading('Obra indisponível','Selecione uma obra existente.','<a class="btn" href="#obras/contas">Contas das obras</a>');
+  const selector=`<label class="range-field finance-project-field">Obra<select id="finance-project" aria-label="Obra das contas"><option value="">Todas as obras</option>${state.projects.map(p=>`<option value="${esc(p.id)}" ${p.id===id?'selected':''}>${esc(p.name)} · ${esc(p.client)}</option>`).join('')}</select></label>`;
+  const filters=`<div class="finance-filters">${selector}${monthPicker('obra',dateRangeFields('finance-from','finance-until',financeRange.from,financeRange.until))}</div>`;
+  const header=heading(p?esc(p.name):'Contas mensais',p?`${esc(p.client)} · Resumo de recebimentos, pagamentos e custos.`:'Selecione a obra e o mês para consultar e organizar as contas.','<a class="btn" href="#obras">Voltar às obras</a>'+(p?'<a class="btn" href="#obras/contas">Contas mensais</a>':btn('+ Custo geral','general-cost',true)));
+  if(p)return header+projectFinanceNavigation(id,'accounts')+filters+projectFinanceView(id);
+  const monthly=ProjectFinance.monthly(state,financeRange.from,financeRange.until);
+  const rows=state.projects.map(p=>{const s=ProjectFinance.overview(state,p.id,financeRange.from,financeRange.until);return {p,...s,paid:s.totals.paid,due:s.totals.due};});
+  const general=ProjectFinance.summary(state,null,financeRange.from,financeRange.until);
+  rows.push({p:{id:'',name:'Custos gerais',client:'Sem obra associada'},...general});
+  const projectCosts=costPeriodSummary('',financeRange.from,financeRange.until).filter(r=>r.project!==null).reduce((n,r)=>n+r.total,0);
+  const sum=key=>money(rows.reduce((n,r)=>n+r[key],0));
+  return header+filters+`<section class="stats">${stat('Custos das obras',euro(projectCosts),'Materiais, despesas e mão de obra no período')}${stat('Custos gerais',euro(general.expenses),'Despesas sem obra no período')}${stat('Total de custos',euro(money(projectCosts+general.expenses)),'Obras e custos gerais no período')}</section>`+financeMainStats({receivable:sum('receivable'),received:sum('received'),due:monthly.totals.due,paid:monthly.totals.paid},true)+financePositionStats()+monthlyCostCategories(monthly)+panel('Contas por obra','Saldos até ao fim do período, incluindo pendências anteriores. Recebimentos e pagamentos efetuados no período.',table(['Obra / cliente','Por receber','Recebido','Por pagar','Pago','Por confirmar','Ações'],rows.map(r=>`<tr><td><strong>${esc(r.p.name)}</strong><small>${esc(r.p.client)}</small></td><td>${euro(r.receivable)}</td><td>${euro(r.received)}</td><td>${euro(r.due)}</td><td>${euro(r.paid)}</td><td>${r.unknownCount?`${r.unknownCount} custo(s)<small>${euro(r.unknownAmount)}</small>`:'—'}</td><td>${r.p.id?btn('Ver contas','project-costs',true,r.p.id):'<button class="btn" data-finance-jump="general">Consultar custos gerais</button>'}</td></tr>`)))+`<p class="finance-scope">Os totais mensais incluem todos os pagamentos à equipa, mesmo sem obra atribuída. Os saldos por obra consideram apenas pagamentos associados à respetiva obra. ${monthly.unassignedPaid?`${euro(monthly.unassignedPaid)} pagos à equipa no período sem obra atribuída.`:''}</p>`+generalCostsPanel();
+}
+function financePositionStats(project){
+  const s=ProjectFinance.position(state,project,financeRange.from,financeRange.until);
+  const card=(label,value,note)=>stat(label,`<span class="${value<0?'settlement-due':'settlement-paid'}">${euro(value)}</span>`,note);
+  return `<section class="stats finance-result-stats" aria-label="Lucro estimado e saldo atual">${card('Lucro estimado',s.profit,'Cobranças previstas − custos registados no período selecionado.')}${card('Saldo atual',s.balance,'Recebido − pago apenas no período selecionado.')}</section>`;
+}
+function monthlyCostCategories(s){
+  const row=(r,total=false)=>`<tr class="${total?'finance-total':''}"><td>${esc(r.label)}</td><td>${euro(r.cost)}</td><td class="settlement-paid">${euro(r.paid)}</td><td class="${r.due>0?'settlement-due':'settlement-paid'}">${euro(r.due)}</td><td>${r.unknown?badge(euro(r.unknown),'amber'):'—'}</td></tr>`;
+  return panel('Custos por categoria','Custos e pagamentos do período. O saldo por pagar inclui pendências anteriores até ao fecho.',table(['Categoria','Custo no período','Pago no período','Por pagar no fecho','Por confirmar'],s.rows.map(r=>row(r)).concat(row({label:'Total',...s.totals},true))))+`<p class="finance-scope">A mão de obra inclui apenas trabalho validado. Adiantamentos e pagamentos à equipa sem obra atribuída entram no apuramento mensal. Valores por confirmar ainda não entram no saldo por pagar.</p>`;
+}
+function financeMainStats(s,allCosts=false){
+  const scope=allCosts?'Materiais, despesas e mão de obra':'Materiais e despesas';
+  return `<section class="stats project-finance-stats" aria-label="Resumo de recebimentos e pagamentos">${stat('Por receber',euro(s.receivable),'Do cliente · saldo até ao fim do período')}${stat('Recebido',euro(s.received),'Do cliente · entradas no período')}${stat('Por pagar',euro(s.due),scope+' · saldo até ao fim do período')}${stat('Pago',euro(s.paid),scope+' · saídas no período')}</section>`;
+}
+function generalCostsPanel(){
+  const {from,until}=financeRange,F=ProjectFinance;
+  const costs=state.costs.filter(c=>c.project===null&&(F.inPeriod(c.date,from,until)||c.date<from&&F.costBalance(state,c,until).due>0)).sort((a,b)=>b.date.localeCompare(a.date));
+  const payments=(state.costPayments||[]).filter(p=>p.project===null&&F.inPeriod(p.date,from,until)).sort((a,b)=>b.date.localeCompare(a.date));
+  return `<div id="finance-general">`+panel('Custos gerais','Despesas sem obra associada, incluídas uma vez nas contas mensais.',table(['Data','Descrição / fornecedor','Custo','Pago até ao fecho','Por pagar no fecho','Estado','Ações'],costs.map(c=>{
+    const b=F.costBalance(state,c,until),now=F.costBalance(state,c);
+    return `<tr><td>${fullDate(c.date)}</td><td><strong>${esc(c.description)}</strong><small>${esc(c.category)} · ${esc(c.supplier||'Sem fornecedor')}</small><small>${esc(c.reference||'')} ${esc(c.note||'')}</small></td><td>${euro(c.amount)}</td><td>${euro(b.paid)}</td><td>${euro(b.due)}</td><td>${badge(!b.active?'Anulado':b.due===0?'Pago':b.paid>0?'Parcialmente pago':'Por pagar',b.due>0?'amber':'')}</td><td><div class="row-actions">${!c.voided&&now.due>0?btn('Registar pagamento','project-cost-payment',false,c.id):''}${!c.voided&&now.paid===0?btn('Anular custo','void-cost',false,c.id):''}</div></td></tr>`;
+  })))+panel('Pagamentos de custos gerais','Movimentos do período, incluindo anulações.',table(['Data','Descrição','Valor','Método','Estado','Ações'],payments.map(p=>`<tr><td>${fullDate(p.date)}</td><td>${esc(state.costs.find(c=>c.id===p.cost)?.description)}<small>${esc(p.note||'')}</small></td><td>${euro(p.amount)}</td><td>${esc(p.method)}</td><td>${badge(p.voided?'Anulado':'Confirmado',p.voided?'gray':'')}</td><td>${p.voided?'—':btn('Anular pagamento','project-void-cost-payment',false,p.id)}</td></tr>`)))+`</div>`;
+}
+function projectFinanceDate(){
+  const {until}=financeRange;
+  return until&&until<today()?until:today();
+}
+function projectFinanceSummary(p,s){
+  const labour=s.rows.find(r=>r.kind==='labour').cost;
+  return financeMainStats({...s,paid:s.totals.paid,due:s.totals.due},true)+financePositionStats(p.id)+`
+    <section class="panel finance-cost-summary" aria-labelledby="finance-cost-summary-title">
+      <div class="panel-head"><h2 id="finance-cost-summary-title">Contrato e custos</h2></div>
+      <div class="finance-contract"><div><span>Valor do contrato</span><small>Valor total acordado para a obra</small></div><strong>${euro(p.budget)}</strong></div>
+      <div class="finance-cost-composition"><h3>Custos no período</h3><dl>
+        <div><dt>Materiais</dt><dd>${euro(s.materials)}</dd></div>
+        <div><dt>Outras despesas</dt><dd>${euro(s.expenses)}</dd></div>
+        <div><dt>Mão de obra</dt><dd>${euro(labour)}</dd></div>
+        <div class="finance-cost-total"><dt>Total de custos</dt><dd>${euro(s.totals.cost)}</dd></div>
+      </dl></div>
+      ${s.unknownCount||s.unassignedWages?`<details class="finance-payment-review info-disclosure"><summary>Pagamentos por confirmar · ${s.unknownCount+s.unassignedWages}</summary><div>${s.unknownCount?`${euro(s.unknownAmount)} em custos sem estado de pagamento confirmado, fora do saldo por pagar. `:''}${s.unassignedWages?'Existem pagamentos à equipa sem obra atribuída. O saldo de mão de obra pode estar sobreavaliado até esses pagamentos serem conferidos.':''}</div></details>`:''}
+    </section>`;
+}
+function projectFinanceView(id){
+  const p=worksite(id),{from,until}=financeRange,F=ProjectFinance,s=F.summary(state,id,from,until);
+  const overview=F.overview(state,id,from,until);
+  const costs=state.costs.filter(c=>c.project===id&&(F.inPeriod(c.date,from,until)||c.date<from&&(F.costBalance(state,c,until).due>0||F.costBalance(state,c,until).unknown))).sort((a,b)=>b.date.localeCompare(a.date));
+  const charges=state.charges.filter(c=>c.project===id&&(F.inPeriod(c.due,from,until)||c.due<from&&F.chargeBalance(state,c,until)>0||state.receipts.some(r=>r.charge===c.id&&F.inPeriod(r.date,from,until)))).sort((a,b)=>a.due.localeCompare(b.due));
+  const movements=[...(state.wagePayments||[]).filter(r=>r.project===id&&F.inPeriod(r.date,from,until)).map(r=>({...r,direction:'out',wage:true,description:'Pagamento de trabalho: '+(person(r.employee)?.name||'')})),...(state.costPayments||[]).filter(r=>r.project===id&&F.inPeriod(r.date,from,until)).map(r=>({...r,direction:'out',description:state.costs.find(c=>c.id===r.cost)?.description||'Custo'})),...state.receipts.filter(r=>r.project===id&&F.inPeriod(r.date,from,until)).map(r=>({...r,direction:'in',description:state.charges.find(c=>c.id===r.charge)?.description||'Recebimento'}))].sort((a,b)=>b.date.localeCompare(a.date));
+  const actions=`<div class="project-finance-actions">${btn('+ Material','project-material',false,id)}${btn('+ Despesa','project-expense',false,id)}${btn('+ Cobrança','project-charge',false,id)}${btn('+ Recebimento','project-receipt',true,id)}</div>`;
+  return `<section class="project-monthly" aria-label="Contas da obra"><div class="project-finance-heading"><div><h2>Contas da obra</h2><span>${from||until?`${from?fullDate(from):'Início'} a ${until?fullDate(until):'hoje'}`:'Toda a obra'}</span></div>${actions}</div>
+    ${projectFinanceSummary(p,overview)}
+    <nav class="finance-jumps" aria-label="Detalhes das contas">${[['charges','Recebimentos'],['costs','Materiais e despesas'],['movements','Movimentos'],['labour','Mão de obra']].map(([key,label])=>`<button class="btn" type="button" data-finance-jump="${key}">${label}</button>`).join('')}</nav>
+
+    <details class="notice info-disclosure"><summary>Como são apurados estes valores</summary><div>Os custos seguem a data do custo; entradas e saídas seguem a data do pagamento. Os saldos incluem pendências anteriores até ao fecho. Custos antigos sem informação de pagamento ficam por confirmar. As saídas de armazém contam como custo, mas não como dívida ao fornecedor. As saídas incluem materiais, despesas e pagamentos à equipa associados à obra. A diferença de entradas e saídas não representa o lucro da obra.</div></details>
+    <div id="finance-costs">${panel('Materiais e despesas desta obra','Custos do período e pendências anteriores. Pode registar pagamentos parciais.',table(['Data / tipo','Descrição / fornecedor','Custo','Pago até ao fecho','Por pagar no fecho','Estado no fecho','Ações'],costs.map(c=>{
+      const b=F.costBalance(state,c,until),now=F.costBalance(state,c);
+      const label=!b.active?'Anulado':c.inventoryLot?'Saída de armazém':b.unknown?'Por confirmar':b.due===0?'Pago':b.paid>0?'Parcial':'Por pagar';
+      return `<tr><td>${fullDate(c.date)}<small>${costKinds[c.kind]}${from&&c.date<from?' · Anterior ao mês':''}</small></td><td><strong>${esc(c.description)}</strong><small>${esc(c.category)} · ${esc(c.supplier||'Sem fornecedor')}</small><small>${esc(c.reference||'')} ${esc(c.note||'')}</small>${c.kind==='material'?`<small>${costNumber(c.quantity)} ${esc(c.unit)} × ${euro(c.unitPrice)}</small>`:''}</td><td>${euro(c.amount)}</td><td>${c.inventoryLot||b.unknown?'—':euro(b.paid)}</td><td>${c.inventoryLot||b.unknown?'—':euro(b.due)}</td><td>${badge(label,b.unknown||b.due>0?'amber':!b.active?'gray':'')}</td><td><div class="row-actions">${!c.voided&&!c.inventoryLot&&(now.unknown||now.due>0)?btn('Registar pagamento','project-cost-payment',false,c.id):''}${!c.voided&&now.unknown?btn('Confirmar por pagar','project-cost-unpaid',false,c.id):''}${!c.voided&&now.paid===0?btn('Anular custo','void-cost',false,c.id):''}</div></td></tr>`;
+    })))}</div>
+    <div id="finance-charges">${panel('Cobranças e recebimentos desta obra','Estado dos recebimentos até ao fim do período selecionado.',table(['Cobrança','Vencimento','Valor','Recebido até ao fecho','Por receber no fecho','Estado','Ações'],charges.map(c=>{
+      const status=F.chargeState(state,c,until);
+      return `<tr><td>${esc(c.description)}</td><td>${fullDate(c.due)}${from&&c.due<from?'<small>Anterior ao mês</small>':''}</td><td>${euro(c.amount)}</td><td>${euro(status.paid)}</td><td>${euro(F.chargeBalance(state,c,until))}</td><td>${badge(status.label,status.tone)}</td><td><div class="row-actions">${outstanding(c)>0?btn('Registar recebimento','new-receipt',false,c.id):''}${!c.voided&&received(c.id)===0?btn('Anular cobrança','voidCharge',false,c.id):''}</div></td></tr>`;
+    })))}</div>
+    <div id="finance-movements">${panel('Movimentos financeiros da obra','Histórico do período, incluindo anulações. Corrija um movimento anulando-o e registando o correto.',table(['Data','Movimento / descrição','Valor','Método / observação','Estado','Ações'],movements.map(r=>`<tr><td>${fullDate(r.date)}</td><td><strong>${r.direction==='in'?'Recebimento':'Pagamento'}</strong><small>${esc(r.description)}</small></td><td>${euro(r.amount)}</td><td>${esc(r.method)}<small>${esc(r.note||'')}</small></td><td>${badge(r.voided?'Anulado':'Confirmado',r.voided?'gray':'')}<small>${esc(r.voidReason||'')}</small></td><td>${r.voided?'—':btn('Anular movimento',r.direction==='in'?'voidReceipt':r.wage?'voidPayment':'project-void-cost-payment',false,r.id)}</td></tr>`)))}</div>
+    <div id="finance-labour">${labourCostPanel(id,from,until)}${panel('Trabalho nesta obra','Edite e valide os registos do período.',projectWorkTable(state.entries.filter(r=>r.project===id&&ProjectFinance.inPeriod(r.date,from,until))))}</div>
+    ${panel('Entradas e saídas por método','Os movimentos seguem a data em que o dinheiro foi recebido ou pago.',table(['Método','Recebido','Pago (inclui equipa)','Diferença'],overview.methods.map(r=>`<tr><td>${r.method==='Numerário'?'Numerário (dinheiro)':esc(r.method)}</td><td>${euro(r.received)}</td><td>${euro(r.paid)}</td><td>${euro(money(r.received-r.paid))}</td></tr>`).concat(`<tr class="finance-total"><td>Total</td><td>${euro(s.received)}</td><td>${euro(overview.totals.paid)}</td><td>${euro(money(s.received-overview.totals.paid))}</td></tr>`)))}
+    </section>`;
+}
+function projectCostForm(kind,id){
+  const general=id===null,p=general?{name:'Custos gerais · sem obra associada'}:worksite(id),material=kind==='material',date=projectFinanceDate();
+  if(!p)return;
+  modal(general?'Adicionar custo geral':material?'Adicionar material à obra':'Adicionar despesa à obra',`<p class="field full">${esc(p.name)}</p>`+input('description',material?'Descrição do material':'Descrição da despesa','','text','required maxlength="160"',true)+input('date','Data do custo',date,'date',`required max="${today()}"`)+(material?select('unit','Unidade',['un','m','m²','m³','kg','L','saco','caixa'],'un'):select('category','Categoria da despesa',['Transporte','Aluguer de equipamento','Subcontratação','Resíduos','Outras despesas'],'Transporte'))+(material?input('quantity','Quantidade',1,'number','required min="0.001" max="100000" step="0.001"'):'')+input('unitPrice',material?'Custo unitário final (€)':'Valor final da despesa (€)','','number','required min="0.01" max="1000000" step="0.01"')+input('supplier','Fornecedor / prestador','','text','maxlength="120"')+input('reference','Referência do documento','','text','maxlength="100"')+input('note','Observações','','text','maxlength="200"',true)+`<div class="field full form-preview" id="project-cost-total" aria-live="polite"></div>`+select('settlement','Estado do pagamento',[['unpaid','Por pagar'],['paid','Totalmente pago'],['partial','Parcialmente pago']],'unpaid',true)+`<div class="field full" id="project-payment-fields"><div class="form-grid">${input('paidAmount','Valor já pago (€)','','number','required min="0.01" step="0.01"')}${input('paymentDate','Data do pagamento',date,'date',`required max="${today()}"`)}${select('paymentMethod','Método do pagamento',[['Transferência','Transferência bancária'],['Numerário','Numerário (dinheiro)'],['MB WAY','MB WAY'],['Outro','Outro']],'Transferência')}</div></div>`,d=>change(general?'generalCost':'projectCost',{...d,project:id,kind,quantity:material?Number(d.quantity):1,unitPrice:Number(d.unitPrice),paidAmount:Number(d.paidAmount)}),'Indique o custo final com IVA quando aplicável. Um pagamento reduz o saldo a pagar e não acrescenta um segundo custo. O custo entra no período correspondente à data indicada.');
+  const form=$('#form');
+  const update=()=>{const paying=form.elements.settlement.value!=='unpaid',partial=form.elements.settlement.value==='partial';$('#project-payment-fields').hidden=!paying;for(const n of ['paidAmount','paymentDate','paymentMethod'])form.elements[n].disabled=!paying;form.elements.paidAmount.disabled=!partial;form.elements.paidAmount.closest('label').hidden=!partial;form.elements.paymentDate.min=form.elements.date.value;const total=money(Math.floor((Math.round(Number(material?form.elements.quantity.value:1)*1000)*Math.round(Number(form.elements.unitPrice.value)*100)+500)/1000)/100);$('#project-cost-total').textContent=`Total do custo: ${euro(total)}`;form.elements.paidAmount.max=total;};
+  form.oninput=update;form.onchange=update;update();
+}
+function projectCostPaymentForm(id){
+  const c=state.costs.find(c=>c.id===id);if(!c||c.voided)return;
+  const b=ProjectFinance.costBalance(state,c),date=[c.date,projectFinanceDate()].sort().at(-1);
+  modal('Registar pagamento do custo',`<p class="field full">${esc(worksite(c.project)?.name||'Custos gerais')} · ${esc(c.description)}<br>${b.unknown?'Confirme todos os pagamentos deste custo para apurar o saldo.':`Saldo atual: ${euro(b.due)}`}</p>`+input('amount','Valor pago (€)',b.unknown?c.amount:b.due,'number',`required min="0.01" max="${b.unknown?c.amount:b.due}" step="0.01"`)+input('date','Data do pagamento',date,'date',`required min="${c.date}" max="${today()}"`)+select('method','Método do pagamento',[['Transferência','Transferência bancária'],['Numerário','Numerário (dinheiro)'],['MB WAY','MB WAY'],['Outro','Outro']],'Transferência')+input('note','Observação do pagamento','','text','maxlength="200"',true),d=>change('costPayment',{...d,cost:id,amount:Number(d.amount)}),'Pode registar pagamentos parciais e diferentes métodos. O saldo restante passa a ser considerado por pagar.');
+}
+function projectReceiptForm(id){
+  const charges=state.charges.filter(c=>c.project===id&&outstanding(c)>0);
+  if(!charges.length)return projectChargeForm(id);
+  modal('Registar recebimento na obra',`<p class="field full">${esc(worksite(id)?.name)}</p>`+select('charge','Cobrança',charges.map(c=>[c.id,`${c.description} · ${euro(outstanding(c))} por receber`]),charges[0].id,true)+input('amount','Valor recebido (€)',outstanding(charges[0]),'number','required min="0.01" step="0.01"')+input('date','Data do recebimento',projectFinanceDate(),'date',`required max="${today()}"`)+select('method','Método do recebimento',[['Transferência','Transferência bancária'],['Numerário','Numerário (dinheiro)'],['MB WAY','MB WAY'],['Outro','Outro']],'Transferência')+input('note','Observação do recebimento','','text','maxlength="200"',true),d=>change('receipt',{...d,amount:Number(d.amount)}));
+  const form=$('#form'),update=()=>{const c=charges.find(c=>c.id===form.elements.charge.value);form.elements.amount.value=outstanding(c);form.elements.amount.max=outstanding(c);};form.elements.charge.onchange=update;update();
+}
+function projectChargeForm(id){
+  const p=worksite(id);if(!p)return;
+  modal('Nova cobrança nesta obra',`<p class="field full">${esc(p.name)} · ${esc(p.client)}</p>`+input('description','Descrição da cobrança','','text','required maxlength="160"',true)+input('amount','Valor da cobrança (€)','','number','required min="0.01" max="10000000" step="0.01"')+input('due','Data de vencimento',financeRange.until||today(),'date','required'),d=>change('charge',{...d,project:id,amount:Number(d.amount)}),'Defina primeiro o valor a cobrar. Depois pode registar um ou vários recebimentos nesta mesma obra.');
+}
+document.addEventListener('change',event=>{
+  if(event.target.id==='finance-project'){location.hash=event.target.value?'obra/'+event.target.value+'/contas':'obras/contas';return;}
+  if(!['finance-from','finance-until'].includes(event.target.id))return;
+  const from=$('#finance-from').value,until=$('#finance-until').value;
+  if(from&&until&&from>until){toast('O início deve ser anterior ou igual ao fim.');render();return;}
+  financeRange={from,until};render();
+});
+document.addEventListener('click',event=>{
+  const jump=event.target.closest('[data-finance-jump]');
+  if(jump){document.getElementById('finance-'+jump.dataset.financeJump)?.scrollIntoView({block:'start',behavior:'smooth'});return;}
+  const el=event.target.closest('[data-action]');if(!el)return;const id=el.dataset.id;
+  switch(el.dataset.action){
+    case'general-cost':projectCostForm('expense',null);break;
+    case'project-charge':projectChargeForm(id);break;
+    case'project-receipt':projectReceiptForm(id);break;
+    case'project-cost-payment':projectCostPaymentForm(id);break;
+    case'project-cost-unpaid':modal('Confirmar custo por pagar',`<p class="field full">Confirma que o custo «${esc(state.costs.find(c=>c.id===id)?.description)}» ainda não teve qualquer pagamento? O valor completo passará a ser apresentado por pagar.</p>`,()=>change('trackCostPayment',{cost:id}));break;
+    case'project-void-cost-payment':modal('Anular pagamento do custo',input('reason','Motivo da anulação','','text','required maxlength="200"',true),d=>change('voidCostPayment',{id,reason:d.reason}));break;
+  }
+});

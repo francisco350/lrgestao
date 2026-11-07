@@ -55,7 +55,7 @@
     const pending=total(db.entries.filter(r=>r.employee===employeeId&&r.status==='pending'&&r.date>=start&&r.date<=end));
     return {opening,earned,paid,pending,balance:money(opening+earned-paid)};
   }
-  function payment(db,{employee,amount:raw,date,type,method,note}){
+  function payment(db,{employee,amount:raw,date,type,method,note,entry}){
     const value=money(raw);
     if(!db.employees.some(e=>e.id===employee))throw Error('Selecione um funcionário.');
     if(!Number.isFinite(value)||value<=0||value>1000000)throw Error('Indique um valor válido, superior a zero.');
@@ -63,7 +63,15 @@
     if(!['payment','advance'].includes(type))throw Error('Selecione o tipo de movimento.');
     const due=ledger(db,employee,'0001-01-01',date).balance;
     if(type==='payment'&&value>Math.max(0,due))throw Error('O valor excede o saldo aprovado nesta data. Use Adiantamento para um valor antecipado.');
-    return {employee,amount:value,date,type,method,note:String(note||'').trim()};
+    let allocation={};
+    if(entry){
+      const row=db.entries.find(r=>r.id===entry&&r.employee===employee&&r.status==='approved'&&r.date<=date);
+      if(!row||type!=='payment')throw Error('Selecione trabalho validado anterior ao pagamento.');
+      const paid=money(db.wagePayments.filter(p=>!p.voided&&p.entry===entry).reduce((s,p)=>s+p.amount,0));
+      if(value>money(amount(row)-paid))throw Error('O valor excede o saldo deste registo.');
+      allocation={entry,project:row.project,paidMinutes:row.minutes*value/amount(row)};
+    }
+    return {employee,amount:value,date,type,method,note:String(note||'').trim(),...allocation};
   }
   return {migrate,amount,total,approved,work,validateWork,ledger,payment,money,validDate};
 });
