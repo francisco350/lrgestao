@@ -3,6 +3,8 @@ const {openStore,readState,mutate,audit,publicUser}=require('./lib/store.cjs');
 const {hashPassword,verifyPassword,validatePassword,token,digest}=require('./lib/auth.cjs');
 const D=require('./lib/domain.cjs');
 const A=require('./lib/attachments.cjs');
+const {applyImport}=require('./lib/company-import.cjs');
+const {readWorkbook}=require('./lib/read-workbook.cjs');
 const Trial=require('./lib/trial.cjs');
 const JSON_LIMIT=65536,SESSION_HOURS=8;
 function createApplication({database=path.join(__dirname,'data','lino.sqlite'),origin='http://127.0.0.1:4174',production=false,companyId='',usernameAvailable=()=>true}={}){
@@ -60,6 +62,31 @@ function createApplication({database=path.join(__dirname,'data','lino.sqlite'),o
           const fresh=startSession(s.id);return json(res,200,{user:presentUser(db.prepare('SELECT * FROM users WHERE id=?').get(s.id)),csrf:fresh.csrf},{'Set-Cookie':cookie(fresh.raw)});
         }
         if(user.mustChangePassword)D.fail('Altere a palavra-passe provisória antes de continuar.',428);
+        if(req.method==='POST' && url.pathname==='/api/company-import'){
+          requireAdmin(s);
+          const input=await body(req, 5*1024*1024);
+          if(!['preview','commit'].includes(input.mode))D.fail('Escolha validar ou confirmar a importação.');
+          if(typeof input.content!=='string'||input.content.length>4*1024*1024)D.fail('Selecione um ficheiro .xlsx até 3 MB.');
+          if(uploadsInFlight>=2)D.fail('Importação em curso. Tente novamente.',429);
+          let rows;
+          uploadsInFlight++;
+          try{rows=await readWorkbook(Buffer.from(input.content,'base64'),'company');}
+          finally{uploadsInFlight--;}
+          const fresh=authenticated(req);
+          requireAdmin(fresh);
+          if(fresh.must_change)D.fail('Altere a palavra-passe provisória antes de continuar.',428);
+          if(input.mode==='preview'){
+            const draft=readState(db);
+            return json(res,200,{revision:draft.revision,...applyImport(draft,user,rows)});
+          }
+          let report;
+          const revision=mutate(db,input.revision,fresh.id,'company_import',draft=>{
+            report=applyImport(draft,user,rows);
+            if(report.errorCount)D.fail(report.errors.join('\n'));
+            if(!Object.values(report.summary).some(item=>item.created))D.fail('Todas as linhas já existem nesta empresa.');
+          });
+          return json(res,200,{revision,...report});
+        }
         if(url.pathname==='/api/company'){
           requireAdmin(s);
           if(req.method==='GET')return json(res,200,{company:company()});

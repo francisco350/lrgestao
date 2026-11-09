@@ -70,3 +70,23 @@ details.info-disclosure{display:block}
   .month-filter:has(.period-date-range){align-items:flex-start;flex-direction:row}
   .period-date-range{flex-basis:100%;margin-inline-start:0}
 }
+
+.section-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+.form-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.form-stack > button { justify-self: start; }
+.description-action {
+  display: block;
+  width: fit-content;
+  margin-block-start: 8px;
+  font-weight: 600;
+}
+.import-body { padding-block-start: 0; }
+.import-body > p:first-child { margin-block-start: 0; }

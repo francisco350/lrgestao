@@ -9,6 +9,33 @@ test('autenticação real, autorização e persistência entre sessões',async t
   const state=async c=>(await call(c,'state')).body;
   const act=async(c,type,data,revision)=>call(c,'action','POST',{type,data,revision:revision??(await state(c)).revision});
   try{
+    await t.test('modelo de importação e referências entre clientes, funcionários, obras e equipas',async()=>{
+      const {headers,readRows,applyImport}=require('./lib/company-import.cjs');
+      const {mutate}=require('./lib/store.cjs');
+      const admin={id:'import-test',role:'admin'};
+      const source={Clientes:['CLI','Cliente importado'],Funcionários:['FUN','Funcionário importado','Pintor','Hora','12,50',8],
+        Obras:['OBR','Obra importada','CLI','Porto','Em curso',15000],Equipas:['OBR','FUN']};
+      const rows=readRows(Object.entries(source).map(([sheet,row])=>({sheet,data:[headers[sheet],[],row]})).reverse());
+      const original=readState(app.db);
+      const draft=structuredClone(original);
+      const first=applyImport(draft,admin,rows);
+      assert.equal(first.errorCount,0);
+      assert.deepEqual(Object.values(first.summary).map(s=>s.created),[1,1,1,1]);
+      assert.equal(draft.projects.at(-1).clientId,draft.clients.at(-1).id);
+      assert.deepEqual(draft.projects.at(-1).employees,[draft.employees.at(-1).id]);
+      assert.equal(draft.employees.at(-1).rate,12.5);
+      assert.deepEqual(Object.values(applyImport(draft,admin,rows).summary).map(s=>s.existing),[1,1,1,1]);
+      rows.Clientes[0].values[1]='Outro nome';
+      assert.match(applyImport(draft,admin,rows).errors[0],/Clientes, linha 3.*dados diferentes/);
+      rows.Equipas[0].values[1]='DESCONHECIDO';
+      assert.throws(()=>mutate(app.db,original.revision,admin.id,'company_import',s=>{
+        const report=applyImport(s,admin,rows);
+        if(report.errorCount)throw Error(report.errors[0]);
+      }),/Equipas, linha 3/);
+      assert.deepEqual(readState(app.db),original);
+      const blank=fs.readFileSync(path.join(__dirname,'public','modelo-importacao-empresa.xlsx'));
+      await assert.rejects(require('./lib/read-workbook.cjs').readWorkbook(blank,'company'),/não contém linhas/);
+    });
     await t.test('rejeita anónimo, credenciais erradas e login com origem diferente',async()=>{assert.equal((await call(a,'state')).status,401);assert.equal((await login(a,'lino','errada')).status,401);assert.equal((await call(a,'login','POST',{username:'lino',password:passwords.lino},{Origin:'https://outro.example'})).status,403);});
     await t.test('cria quatro sessões independentes e guarda apenas hashes',async()=>{for(const [c,name]of[[a,'lino'],[m,'antonio'],[w,'joao'],[other,'rui']])assert.equal((await login(c,name)).status,200);const user=app.db.prepare("SELECT password_hash FROM users WHERE username='lino'").get();assert(user.password_hash.startsWith('scrypt$'));assert(!user.password_hash.includes(passwords.lino));const cookie=(await login(a,'lino')).headers.get('set-cookie');assert(cookie.includes('HttpOnly'));assert(cookie.includes('SameSite=Strict'));assert(!app.db.prepare('SELECT token_hash FROM sessions').all().some(s=>a.cookie.includes(s.token_hash)));});
     await t.test('filtra dados por funcionário e obra, sem transmitir remunerações ao encarregado',async()=>{const own=await state(w),elsewhere=await state(other),managed=await state(m);assert(own.employees.every(e=>e.id==='e2'));assert(own.entries.every(e=>e.employee==='e2'));assert(own.projects.every(p=>p.id==='o1'));assert(elsewhere.projects.every(p=>p.id==='o3'));assert(!managed.projects.some(p=>p.id==='o3'));assert(managed.employees.every(e=>!('rate'in e)));assert(managed.entries.every(e=>!('unitRate'in e)&&!('rate'in e)));assert.equal(managed.wagePayments.length,0);for(const endpoint of ['users','audit','backup'])assert.equal((await call(w,endpoint)).status,403);});
