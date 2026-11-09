@@ -64,6 +64,33 @@ const {createApplication}=require('./server.cjs'),{seed}=require('./seed.cjs'),{
     await p.getByRole('button',{name:'Este mês',exact:true}).click();
     const statText=await p.getByRole('region',{name:'Resumo de recebimentos e pagamentos'}).innerText();
     for(const label of ['Por receber','Recebido','Por pagar','Pago'])assert(statText.includes(label));
+    async function checkCardDetails(){
+      for(const card of await p.locator('[data-finance-card]').all()){
+        const total=await card.locator('.stat-value').innerText();
+        await card.click();
+        const detail=p.getByRole('dialog');
+        assert.equal(await detail.locator('.finance-detail-total strong').innerText(),total);
+        const metric=await card.getAttribute('data-finance-card');
+        const descriptions={receivable:'Cobrança teste mensal',received:'Cobrança teste mensal',due:'Cimento teste por pagar',paid:'Gasóleo teste mensal',profit:'Cimento teste por pagar',balance:'Gasóleo teste mensal'};
+        const description=descriptions[metric];
+        assert(await detail.getByText(description,{exact:true}).first().isVisible());
+        if(metric==='profit'||metric==='balance'){
+          const amount=detail.getByRole('listitem').filter({has:detail.page().getByText(description,{exact:true})}).first().locator('b');
+          assert((await amount.innerText()).startsWith('-'));
+          assert.equal(await detail.getByText('Cobrança teste mensal',{exact:true}).count(),metric==='balance'?1:0);
+          const calculation=detail.getByRole('region',{name:'Resumo do cálculo'});
+          const parts=await calculation.locator('dd').allTextContents();
+          assert.deepEqual(await calculation.locator('dt').allTextContents(),metric==='profit'?['Cobranças previstas','Custos registados']:['Recebimentos','Pagamentos']);
+          const cents=text=>Math.round(Number(text.replace(/[^\d,-]/g,'').replace(',','.'))*100);
+          const entries=(await detail.locator('li b').allTextContents()).map(cents);
+          assert.deepEqual(parts.map(cents),[entries.reduce((n,v)=>n+Math.max(0,v),0),entries.reduce((n,v)=>n+Math.max(0,-v),0)]);
+          assert.equal(await calculation.locator('.finance-equation b').textContent(),parts[0]+' − '+parts[1]+' = '+await card.locator('.stat-value').textContent());
+        }
+        await p.keyboard.press('Escape');
+        assert(await card.evaluate(el=>el===document.activeElement));
+      }
+    }
+    await checkCardDetails();
     await p.getByLabel('Obra das contas',{exact:true}).selectOption('o3');await p.getByRole('heading',{name:'Pintura de moradia',exact:true}).waitFor();
     assert.equal(await p.getByText('Cimento teste por pagar',{exact:true}).count(),0);
     await p.reload();await p.getByRole('heading',{name:'Pintura de moradia',exact:true}).waitFor();assert.equal(await p.getByLabel('Obra das contas').inputValue(),'o3');
@@ -73,6 +100,8 @@ const {createApplication}=require('./server.cjs'),{seed}=require('./seed.cjs'),{
     const monthlyCards=p.getByRole('region',{name:'Resumo de recebimentos e pagamentos'});
     assert.equal(await monthlyCards.locator('.stat-value').nth(2).innerText(),expectedMonthly.due);
     assert.equal(await monthlyCards.locator('.stat-value').nth(3).innerText(),expectedMonthly.paid);
+    await p.setViewportSize({width:390,height:844});
+    await checkCardDetails();
     assert.equal(await p.getByRole('region',{name:'Lucro estimado e saldo atual'}).locator('.stat').count(),2);
     for(const width of [1440,390]){await p.setViewportSize({width,height:1000});assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Contas mensais sem overflow');}
     await p.setViewportSize({width:1440,height:1000});
@@ -115,6 +144,19 @@ const {createApplication}=require('./server.cjs'),{seed}=require('./seed.cjs'),{
 
     await p.getByRole('row').filter({hasText:'Remodelação de apartamento'}).getByRole('button',{name:'Ver contas',exact:true}).click();
     assert.equal(await p.getByText('Gasóleo geral mensal',{exact:true}).count(),0);assert.equal(await p.locator('nav[aria-label="Menu principal"] a[aria-current="page"]').getAttribute('href'),'#obras');
+    for(const route of ['custos','recebimentos']){
+      await p.goto(origin+'/#'+route);
+      const cards=p.locator('[data-section-detail]');
+      await cards.first().waitFor();
+      assert.equal(await cards.count(),4);
+      for(const card of await cards.all()){
+        const total=await card.locator('.stat-value').textContent();
+        await card.click();
+        const detail=p.getByRole('dialog');
+        assert((await detail.locator('.finance-equation b').textContent()).endsWith(' = '+total));
+        await detail.getByRole('button',{name:'Fechar detalhe'}).click();
+      }
+    }
     const persisted=readState(app.db);assert.equal(persisted.costPayments.length,3);assert.equal(persisted.costs.find(c=>c.description==='Gasóleo teste mensal').project,'o1');
     assert.deepEqual(errors,[]);await browser.close();browser=null;await app.close();app=createApplication({database,origin});assert.equal(readState(app.db).costPayments.length,3);
     console.log('PASS: criação e pagamento na obra, recebimentos, meses distintos, persistência, acessos unificados, filtros por obra/mês/intervalo, permissões, secção global preservada, desktop/mobile e temas claro/escuro.');

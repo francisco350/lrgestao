@@ -40,6 +40,99 @@ test('autenticação real, autorização e persistência entre sessões',async t
     await t.test('cria quatro sessões independentes e guarda apenas hashes',async()=>{for(const [c,name]of[[a,'lino'],[m,'antonio'],[w,'joao'],[other,'rui']])assert.equal((await login(c,name)).status,200);const user=app.db.prepare("SELECT password_hash FROM users WHERE username='lino'").get();assert(user.password_hash.startsWith('scrypt$'));assert(!user.password_hash.includes(passwords.lino));const cookie=(await login(a,'lino')).headers.get('set-cookie');assert(cookie.includes('HttpOnly'));assert(cookie.includes('SameSite=Strict'));assert(!app.db.prepare('SELECT token_hash FROM sessions').all().some(s=>a.cookie.includes(s.token_hash)));});
     await t.test('filtra dados por funcionário e obra, sem transmitir remunerações ao encarregado',async()=>{const own=await state(w),elsewhere=await state(other),managed=await state(m);assert(own.employees.every(e=>e.id==='e2'));assert(own.entries.every(e=>e.employee==='e2'));assert(own.projects.every(p=>p.id==='o1'));assert(elsewhere.projects.every(p=>p.id==='o3'));assert(!managed.projects.some(p=>p.id==='o3'));assert(managed.employees.every(e=>!('rate'in e)));assert(managed.entries.every(e=>!('unitRate'in e)&&!('rate'in e)));assert.equal(managed.wagePayments.length,0);for(const endpoint of ['users','audit','backup'])assert.equal((await call(w,endpoint)).status,403);});
     await t.test('não aceita escalada por cabeçalhos, campos, funcionário ou obra',async()=>{assert.equal((await call(w,'users','POST',{username:'intruso',role:'admin'},{'X-Role':'admin'})).status,403);assert.equal((await act(w,'employee',{name:'Ataque',role:'admin'})).status,403);assert.equal((await act(w,'work',{employee:'e1',project:'o1',date:'2026-10-17',mode:'days',days:.5})).status,403);assert.equal((await act(w,'work',{employee:'e2',project:'o3',date:'2026-10-17',mode:'days',days:.5})).status,403);assert.equal((await act(m,'approve',{id:'r4'})).status,403);assert.equal((await call(a,'action','POST',{type:'employee',revision:(await state(a)).revision,data:{}},{'X-CSRF-Token':'incorreto'})).status,403);});
+    await t.test('simulador de WC reproduz o mapa, valida a área e restringe o preçário',async()=>{
+      const simulate=(session,area,trades)=>call(session,'bathroom-estimate','POST',{area,trades,hourlyCents:1});
+      for(const user of [m,w])assert.equal((await simulate(user,6,['pichelaria'])).status,403);
+      const both=['electricidade','pichelaria'];
+      const reference=await simulate(a,6,both);
+      assert.equal(reference.status,200);
+      assert.deepEqual(reference.body.lines.map(l=>[l.hours,l.materialsCents,l.labourCents,l.subtotalCents]),
+        [[48,13061,86400,99461],[64,38963,115200,154163]]);
+      assert.equal(reference.body.subtotalCents,253624);
+      assert.equal((await simulate(a,6,[both[1]])).body.subtotalCents,154163);
+      assert.equal((await simulate(a,6,[both[0]])).body.subtotalCents,99461);
+      const projected=(await simulate(a,8,both)).body;
+      assert.equal(projected.subtotalCents,338165);
+      assert.equal(projected.lines.reduce((sum,l)=>sum+l.subtotalCents,0),projected.subtotalCents);
+      assert.equal((await simulate(a,4.75,both)).status,200);
+      for(const area of [null,0,-1,'6',0.001,10001])assert.equal((await simulate(a,area,both)).status,400);
+      for(const scope of [[],['azulejos'],[both[0],both[0]]])assert.equal((await simulate(a,6,scope)).status,400);
+    });
+    await t.test('mapa completo: importação, versão ativa, permissões e projeção das oito composições',async()=>{
+      const name='estimate-catalog';
+      const before=(await call(a,name)).body;
+      const content=fs.readFileSync(path.join(__dirname,'catalogo','mapa-de-quantidades.xlsx')).toString('base64');
+      for(const session of [w,m]){
+        assert.equal((await call(session,name)).status,403);
+        assert.equal((await call(session,name,'POST',{content,version:before.version})).status,403);
+      }
+      assert.equal((await call(a,name,'POST',{content,version:'antiga'})).status,409);
+      // The development server runs under node --watch, which sends extra worker messages.
+      const previousWatch=process.env.WATCH_REPORT_DEPENDENCIES;
+      process.env.WATCH_REPORT_DEPENDENCIES='1';
+      let imported;
+      try{imported=await call(a,name,'POST',{content,version:before.version});}
+      finally{
+        if(previousWatch===undefined)delete process.env.WATCH_REPORT_DEPENDENCIES;
+        else process.env.WATCH_REPORT_DEPENDENCIES=previousWatch;
+      }
+      assert.equal(imported.status,200);
+      const {version,defaults,rooms}=imported.body;
+      assert.equal(rooms.length,6);
+      assert.equal((await call(a,name,'POST',{version,content:'UEtpbnZhbGlk'})).status,400);
+      const saved=app.db.prepare('SELECT document FROM estimate_catalog WHERE id=1').get();
+      assert.equal(JSON.parse(saved.document).version,version);
+      const result=await call(a,'estimate','POST',{version,selections:defaults});
+      assert.equal(result.status,200);
+      assert.deepEqual(result.body.lines.map(l=>l.subtotalCents),[351266,99461,154163,104242,208569,127780,182462,184920]);
+      assert.deepEqual([result.body.area,result.body.materialsCents,result.body.labourCents,result.body.subtotalCents],[110,433663,979200,1412863]);
+      assert.equal((await call(a,'estimate','POST',{version:'antiga',selections:defaults})).status,409);
+      assert.equal((await call(a,'estimate','POST',{version,selections:[{room:'sala',area:12,trades:['pichelaria']}]})).status,400);
+    });
+    await t.test('preçário nativo: artigos partilhados, tarifas, composições e edições concorrentes',async()=>{
+      let catalog=(await call(a,'estimate-catalog')).body;
+      const edit=(data,session=a,version=catalog.version)=>call(session,'estimate-catalog/edit','POST',{version,...data});
+      const save=async data=>{const reply=await edit(data);assert.equal(reply.status,200,JSON.stringify(reply.body.error));catalog=reply.body;};
+      for(const session of [w,m])assert.equal((await edit({type:'hourlyRate',hourlyCents:2400},session)).status,403);
+      const original=catalog.version;
+      await save({type:'hourlyRate',hourlyCents:2400});
+      assert.equal((await edit({type:'hourlyRate',hourlyCents:1},a,original)).status,409);
+      const calculate=async selections=>(await call(a,'estimate','POST',{version:catalog.version,selections})).body;
+      const project=[{room:'wc',area:6,trades:['electricidade']},{room:'quarto',area:11,trades:['geral']}];
+      const baseline=await calculate(project);
+      const material=catalog.items.find(i=>i.name==='Caixa p/ pladur');
+      await save({type:'material',...material,name:'Caixa de ensaio',unitCents:material.unitCents+100});
+      const changed=await calculate(project);
+      for(let i=0;i<2;i++){
+        const qty=changed.lines[i].baseMaterials.find(m=>m.name==='Caixa de ensaio').quantity;
+        assert.equal(changed.lines[i].materialsCents-baseline.lines[i].materialsCents,qty*100);
+      }
+      await save({type:'material',name:'Misturadora teste',unit:'un',unitCents:4500});
+      const id=catalog.items.find(i=>i.name==='Misturadora teste').id;
+      const composition={type:'composition',id:'wc-electricidade',baseArea:5,baseHours:2,materials:[{materialId:id,quantity:3}]};
+      await save(composition);
+      assert.equal((await calculate([{room:'wc',area:10,trades:['electricidade']}])).subtotalCents,36600);
+      assert.equal((await edit({...composition,materials:[{materialId:'inexistente',quantity:3}]})).status,400);
+      assert.equal((await edit({type:'material',name:'misturadora teste',unit:'un',unitCents:100})).status,400);
+      assert.equal((await call(a,'estimate-catalog')).body.version,catalog.version);
+    });
+    await t.test('orçamento associado à obra preserva o cálculo e admite repetir a gravação',async()=>{
+      const catalog=(await call(a,'estimate-catalog')).body;
+      const payload={id:require('node:crypto').randomUUID(),project:'o1',title:'WC da entrada',note:'Pintura pendente',
+        version:catalog.version,selections:[{room:'wc',area:6,trades:['pichelaria']}]};
+      const endpoint='project-estimates';
+      assert.equal((await call(w,endpoint)).status,403);
+      assert.equal((await call(a,endpoint,'POST',{...payload,project:'inexistente'})).status,400);
+      assert.equal((await call(a,endpoint,'POST',payload)).status,200);
+      const original=(await call(a,endpoint+'?id='+payload.id)).body;
+      assert.equal(original.project,'o1');
+      assert.equal(original.note,payload.note);
+      assert.equal((await call(a,'estimate-catalog/edit','POST',{version:catalog.version,type:'hourlyRate',hourlyCents:3000})).status,200);
+      assert.equal((await call(a,endpoint,'POST',payload)).status,200);
+      assert.deepEqual((await call(a,endpoint+'?id='+payload.id)).body,original);
+      assert.equal((await call(a,endpoint+'?project=o1')).body.rows.length,1);
+      assert.equal((await call(a,endpoint+'?project=o2')).body.rows.length,0);
+    });
     await t.test('clientes e cobranças: acesso exclusivo, parciais, saldos e anulações',async()=>{
       for(const c of [m,w,other]){const view=await state(c);for(const key of ['clients','charges','receipts'])assert(!Object.hasOwn(view,key));for(const type of ['client','charge','receipt','voidCharge','voidReceipt'])assert.equal((await act(c,type,{})).status,403);}
       assert.equal((await act(a,'client',{name:'Cliente Teste',email:'cliente@example.test',phone:'',cycle:'weekly'})).status,200);

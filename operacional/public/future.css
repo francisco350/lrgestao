@@ -70,6 +70,36 @@ details.info-disclosure{display:block}
   .month-filter:has(.period-date-range){align-items:flex-start;flex-direction:row}
   .period-date-range{flex-basis:100%;margin-inline-start:0}
 }
+.estimate-form{padding:0 22px 22px}
+.estimate-form .btn{margin-top:16px}
+.estimate-pending,.estimate-reference{margin:16px 22px;overflow-wrap:anywhere}
+.estimate-reference summary{cursor:pointer;font-weight:600}
+#estimate-result .panel{margin-top:20px}
+#estimate-result > [data-save]{margin-top:16px}
+.estimate-room{border:1px solid var(--line);border-radius:10px;margin:0 0 14px;padding:12px 16px;min-width:0}
+.estimate-room legend{padding:0 5px;font-weight:600}
+.estimate-note{margin-top:18px}
+#estimate-import [role=status]{display:block;margin-top:8px}
+.catalog-materials{margin:18px 0}
+.catalog-materials summary{cursor:pointer;font-weight:600}
+.catalog-materials .field{margin:12px 0}
+.catalog-materials .table-wrap{max-height:340px;overflow:auto}
+.catalog-composition,.catalog-material-row{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
+.catalog-composition .field,.catalog-material-row .field:first-child{flex:1 1 190px;min-width:0}
+.catalog-material-row{padding:8px 0;border-bottom:1px solid var(--line)}
+.catalog-material-row .field:nth-child(2){flex:0 1 96px;min-width:0}
+.catalog-material-row select,.catalog-material-row input{width:100%;min-width:0}
+#estimate-result tr:last-child>td:last-child strong{font-size:1.2em}
+
+.estimate-settings{padding:22px}.estimate-settings[hidden]{display:none}.estimate-settings .estimate-form{padding:0}.estimate-settings .estimate-reference{margin:18px 0} [data-saved]{margin-top:24px}
+.estimate-settings-head{display:flex;align-items:center;flex-wrap:wrap;gap:12px 20px}
+.estimate-settings-head h2{margin:0}
+.estimate-settings-head p{margin:4px 0 0}
+.estimate-settings-head .actions{margin-inline-start:auto;justify-content:flex-end;flex-wrap:wrap}
+[data-record]:not(:empty){padding-top:24px}
+[data-record] .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+[data-record] .panel-head>div{min-width:0;overflow-wrap:anywhere}
+[data-record] .quote-close{flex:none;margin-inline-start:auto}
 
 .section-stack {
   display: grid;

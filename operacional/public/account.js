@@ -1,7 +1,7 @@
 'use strict';
 function accountPage(){
   return heading(admin()?'Administração da empresa':'A minha conta','Consulte a sua empresa e mantenha os seus dados de acesso atualizados.')+'<div class="section-stack">'+
-    panel('Empresa','Empresa associada à sua conta.',`<div class="profile-card"><p>Nome: <strong>${esc(current.company?.name||'—')}</strong></p>${admin()?btn('Alterar nome da empresa','company-profile')+btn('Secções dos colaboradores','company-sections')+`<p>Crie contas individuais e atribua funções à sua equipa em <a class="view-link" href="#utilizadores">Utilizadores e acessos →</a></p>`:''}</div>`)+
+    panel('Empresa','Empresa associada à sua conta.',`<div class="profile-card"><p>Nome: <strong>${esc(current.company?.name||'—')}</strong></p>${admin()?'<div class="project-finance-actions">'+btn('Alterar nome da empresa','company-profile')+btn('Secções dos colaboradores','company-sections')+'</div>'+`<p>Crie contas individuais e atribua funções à sua equipa em <a class="view-link" href="#utilizadores">Utilizadores e acessos →</a></p>`:''}</div>`)+
     (admin()?companyImportPanel():'')+
     panel('Os meus dados de acesso','Estas alterações aplicam-se apenas à sua conta.',`<div class="profile-card"><p>Nome: <strong>${esc(current.name)}</strong><br>Utilizador: <strong>${esc(current.username)}</strong><br>Perfil: <strong>${roleName[current.role]}</strong></p><div class="account-actions">${admin()?btn('Alterar utilizador','account-username'):''}${btn('Alterar palavra-passe','change-password',true)}</div></div>`)+'</div>';
 }

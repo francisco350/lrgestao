@@ -13,6 +13,11 @@ function openStore(filename){
     INSERT INTO migrations VALUES(1,datetime('now'));COMMIT;`);
   }
   require('./trial.cjs').init(db);
+  db.exec(`CREATE TABLE IF NOT EXISTS project_estimates(
+    id TEXT PRIMARY KEY, project TEXT NOT NULL, title TEXT NOT NULL, created TEXT NOT NULL,
+    author TEXT NOT NULL, total_cents INTEGER NOT NULL, document TEXT NOT NULL);
+    CREATE INDEX IF NOT EXISTS estimates_by_project ON project_estimates(project,created)`);
+  db.exec('CREATE TABLE IF NOT EXISTS estimate_catalog(id INTEGER PRIMARY KEY CHECK(id=1), document TEXT NOT NULL)');
   db.exec(`CREATE TABLE IF NOT EXISTS company_profile(id INTEGER PRIMARY KEY CHECK(id=1),name TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS company_visibility(id INTEGER PRIMARY KEY CHECK(id=1), sections TEXT NOT NULL);
     INSERT OR IGNORE INTO company_profile VALUES(1,'Lino Rua Remodelações');`);

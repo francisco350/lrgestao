@@ -55,6 +55,7 @@ test('empresas: login, isolamento de dados e anexos, credenciais próprias e pra
       const changed=await call(a,'change-password','POST',{currentPassword:password,newPassword:'Nova-Palavra-2026!'});assert.equal(changed.status,200);assert.equal((await login({},'novo.lino')).status,401);assert.equal((await login(a,'novo.lino','Nova-Palavra-2026!')).body.user.company.id,'linorua');
     });
     await t.test('suspender uma empresa não suspende a outra e não há criação pública de empresas',async()=>{
+      assert.equal((await call(b,'bathroom-estimate','POST',{area:6,trades:['pichelaria']})).status,403);
       assert.equal((await call(b,'companies','POST',{name:'Nova'})).status,404);
       const primary=app.applications.get('linorua').db;Trial.change(primary,'start',14);Trial.change(primary,'suspend');
       assert.equal((await call({},'session')).status,401);assert.equal((await call({},'access')).status,401);assert.equal((await login({},'empresa.b')).status,200);

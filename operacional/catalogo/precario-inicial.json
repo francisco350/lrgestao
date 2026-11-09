@@ -1,0 +1,858 @@
+{
+  "hourlyCents": 1800,
+  "compositions": {
+    "quarto-geral": {
+      "id": "quarto-geral",
+      "room": "quarto",
+      "trade": "geral",
+      "name": "Composição da divisão",
+      "sourceSheet": "1. AMBIENTE QUARTO",
+      "baseArea": 11,
+      "baseHours": 64,
+      "materials": [
+        {
+          "materialId": "m-cabo-coaxial",
+          "quantity": 60
+        },
+        {
+          "materialId": "m-cabo-utp",
+          "quantity": 60
+        },
+        {
+          "materialId": "m-caixa-p-pladur",
+          "quantity": 12
+        },
+        {
+          "materialId": "m-centro-de-tomada",
+          "quantity": 4
+        },
+        {
+          "materialId": "m-centro-de-tomada-mista-tv-net",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-chapa-p-pladur",
+          "quantity": 10
+        },
+        {
+          "materialId": "m-comutadores-de-escada-duplo",
+          "quantity": 3
+        },
+        {
+          "materialId": "m-disjuntor-10a",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-disjuntor-16a",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-espelho-simples",
+          "quantity": 5
+        },
+        {
+          "materialId": "m-int-estore",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-int-simples",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-tecla-de-estore",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-tecla-dupla",
+          "quantity": 3
+        },
+        {
+          "materialId": "m-tecla-simples",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-tomada-mista-tv-net",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-tomada",
+          "quantity": 4
+        },
+        {
+          "materialId": "m-tubo-anelado-25-verde",
+          "quantity": 55
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-3x1-5",
+          "quantity": 110
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-3x2-5",
+          "quantity": 70
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-4x1-5",
+          "quantity": 10
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-5x1-5",
+          "quantity": 20
+        }
+      ]
+    },
+    "wc-electricidade": {
+      "id": "wc-electricidade",
+      "room": "wc",
+      "trade": "electricidade",
+      "name": "Eletricidade",
+      "sourceSheet": "2. AMBIENTE WC — ELETRICIDADE",
+      "baseArea": 6,
+      "baseHours": 48,
+      "materials": [
+        {
+          "materialId": "m-caixa-p-pladur",
+          "quantity": 3
+        },
+        {
+          "materialId": "m-centro-de-tomada",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-chapa-p-pladur",
+          "quantity": 3
+        },
+        {
+          "materialId": "m-disjuntor-10a",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-disjuntor-16a",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-espelho-simples",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-int-duplo",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-tecla-dupla",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-tomada",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-3x1-5",
+          "quantity": 30
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-3x2-5",
+          "quantity": 30
+        }
+      ]
+    },
+    "wc-pichelaria": {
+      "id": "wc-pichelaria",
+      "room": "wc",
+      "trade": "pichelaria",
+      "name": "Pichelaria",
+      "sourceSheet": "3. AMBIENTE WC — PICHELARIA",
+      "baseArea": 6,
+      "baseHours": 64,
+      "materials": [
+        {
+          "materialId": "m-curva-de-sanita",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-curva-multicamada-16-1-2",
+          "quantity": 6
+        },
+        {
+          "materialId": "m-curva-pvc-40",
+          "quantity": 10
+        },
+        {
+          "materialId": "m-curva-pvc-50",
+          "quantity": 10
+        },
+        {
+          "materialId": "m-curva-pvc-90",
+          "quantity": 5
+        },
+        {
+          "materialId": "m-sifao-125x50x75",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-torneira-de-esquadria-1-2-1-2",
+          "quantity": 3
+        },
+        {
+          "materialId": "m-tubo-multicamada-16-c-isolamento",
+          "quantity": 25
+        },
+        {
+          "materialId": "m-tubo-multicamada-20-c-isolamento",
+          "quantity": 30
+        },
+        {
+          "materialId": "m-tubo-pvc-40",
+          "quantity": 5
+        },
+        {
+          "materialId": "m-tubo-pvc-50",
+          "quantity": 15
+        },
+        {
+          "materialId": "m-tubo-pvc-90",
+          "quantity": 15
+        }
+      ]
+    },
+    "corredor-geral": {
+      "id": "corredor-geral",
+      "room": "corredor",
+      "trade": "geral",
+      "name": "Composição da divisão",
+      "sourceSheet": "4. AMBIENTE CORREDOR",
+      "baseArea": 5,
+      "baseHours": 48,
+      "materials": [
+        {
+          "materialId": "m-caixa-p-pladur",
+          "quantity": 6
+        },
+        {
+          "materialId": "m-centro-de-tomada",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-chapa-p-pladur",
+          "quantity": 6
+        },
+        {
+          "materialId": "m-disjuntor-10a",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-disjuntor-16a",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-espelho-simples",
+          "quantity": 6
+        },
+        {
+          "materialId": "m-int-simples",
+          "quantity": 4
+        },
+        {
+          "materialId": "m-tecla-simples",
+          "quantity": 4
+        },
+        {
+          "materialId": "m-tomada",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-3x1-5",
+          "quantity": 20
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-3x2-5",
+          "quantity": 50
+        }
+      ]
+    },
+    "sala-geral": {
+      "id": "sala-geral",
+      "room": "sala",
+      "trade": "geral",
+      "name": "Composição da divisão",
+      "sourceSheet": "5. AMBIENTE SALA",
+      "baseArea": 34,
+      "baseHours": 80,
+      "materials": [
+        {
+          "materialId": "m-cabo-coaxial",
+          "quantity": 50
+        },
+        {
+          "materialId": "m-cabo-utp",
+          "quantity": 50
+        },
+        {
+          "materialId": "m-caixa-p-pladur",
+          "quantity": 20
+        },
+        {
+          "materialId": "m-centro-de-tomada",
+          "quantity": 8
+        },
+        {
+          "materialId": "m-centro-de-tomada-fibra",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-centro-de-tomada-mista-tv-net",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-chapa-p-pladur",
+          "quantity": 20
+        },
+        {
+          "materialId": "m-comutadores-de-escada-duplo",
+          "quantity": 4
+        },
+        {
+          "materialId": "m-disjuntor-10a",
+          "quantity": 4
+        },
+        {
+          "materialId": "m-disjuntor-16a",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-espelho-simples",
+          "quantity": 20
+        },
+        {
+          "materialId": "m-int-estore",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-int-simples",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-tecla-de-estore",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-tecla-dupla",
+          "quantity": 4
+        },
+        {
+          "materialId": "m-tecla-simples",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-tomada",
+          "quantity": 8
+        },
+        {
+          "materialId": "m-tomada-fibra",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-tomada-mista-tv-net",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-tubo-anelado-25-verde",
+          "quantity": 75
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-3x1-5",
+          "quantity": 50
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-3x2-5",
+          "quantity": 50
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-4x1-5",
+          "quantity": 25
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-5x1-5",
+          "quantity": 50
+        }
+      ]
+    },
+    "garagem-geral": {
+      "id": "garagem-geral",
+      "room": "garagem",
+      "trade": "geral",
+      "name": "Composição da divisão",
+      "sourceSheet": "6. AMBIENTE GARAGEM",
+      "baseArea": 32,
+      "baseHours": 48,
+      "materials": [
+        {
+          "materialId": "m-caixa-p-pladur",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-centro-de-tomada",
+          "quantity": 5
+        },
+        {
+          "materialId": "m-chapa-p-pladur",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-comutadores-de-escada-duplo",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-disjuntor-10a",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-disjuntor-16a",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-espelho-simples",
+          "quantity": 7
+        },
+        {
+          "materialId": "m-tecla-dupla",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-tomada",
+          "quantity": 5
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-3x1-5",
+          "quantity": 70
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-3x2-5",
+          "quantity": 135
+        }
+      ]
+    },
+    "cozinha-electricidade": {
+      "id": "cozinha-electricidade",
+      "room": "cozinha",
+      "trade": "electricidade",
+      "name": "Eletricidade",
+      "sourceSheet": "7. AMBIENTE COZINHA — ELETRICID",
+      "baseArea": 11,
+      "baseHours": 48,
+      "materials": [
+        {
+          "materialId": "m-cabo-xv-3x4mm",
+          "quantity": 50
+        },
+        {
+          "materialId": "m-caixa-p-pladur",
+          "quantity": 25
+        },
+        {
+          "materialId": "m-comutadores-de-escada-duplo",
+          "quantity": 4
+        },
+        {
+          "materialId": "m-disjuntor-10a",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-disjuntor-16a",
+          "quantity": 5
+        },
+        {
+          "materialId": "m-disjuntor-20a",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-int-simples",
+          "quantity": 2
+        },
+        {
+          "materialId": "m-tubo-anelado-25-vermelho",
+          "quantity": 50
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-3x1-5",
+          "quantity": 50
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-3x2-5",
+          "quantity": 300
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-4x1-5",
+          "quantity": 10
+        },
+        {
+          "materialId": "m-tubo-pre-enfiado-5x1-5",
+          "quantity": 20
+        }
+      ]
+    },
+    "cozinha-pichelaria": {
+      "id": "cozinha-pichelaria",
+      "room": "cozinha",
+      "trade": "pichelaria",
+      "name": "Pichelaria",
+      "sourceSheet": "8. AMBIENTE COZINHA — PICHELARI",
+      "baseArea": 11,
+      "baseHours": 80,
+      "materials": [
+        {
+          "materialId": "m-curva-multicamada-16-1-2",
+          "quantity": 4
+        },
+        {
+          "materialId": "m-curva-pvc-50",
+          "quantity": 20
+        },
+        {
+          "materialId": "m-curva-pvc-75",
+          "quantity": 10
+        },
+        {
+          "materialId": "m-sifao-125x50x75",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-torneira-de-esquadria-1-2-1-2",
+          "quantity": 3
+        },
+        {
+          "materialId": "m-torneira-de-esquadria-1-2-3-4",
+          "quantity": 1
+        },
+        {
+          "materialId": "m-tubo-multicamada-16-c-isolamento",
+          "quantity": 25
+        },
+        {
+          "materialId": "m-tubo-multicamada-20-c-isolamento",
+          "quantity": 15
+        },
+        {
+          "materialId": "m-tubo-pvc-50",
+          "quantity": 25
+        },
+        {
+          "materialId": "m-tubo-pvc-75",
+          "quantity": 25
+        }
+      ]
+    }
+  },
+  "defaults": [
+    {
+      "room": "quarto",
+      "quantity": 2,
+      "area": 22,
+      "trades": [
+        "geral"
+      ]
+    },
+    {
+      "room": "wc",
+      "quantity": 1,
+      "area": 6,
+      "trades": [
+        "electricidade",
+        "pichelaria"
+      ]
+    },
+    {
+      "room": "corredor",
+      "quantity": 1,
+      "area": 5,
+      "trades": [
+        "geral"
+      ]
+    },
+    {
+      "room": "sala",
+      "quantity": 1,
+      "area": 34,
+      "trades": [
+        "geral"
+      ]
+    },
+    {
+      "room": "garagem",
+      "quantity": 1,
+      "area": 32,
+      "trades": [
+        "geral"
+      ]
+    },
+    {
+      "room": "cozinha",
+      "quantity": 1,
+      "area": 11,
+      "trades": [
+        "electricidade",
+        "pichelaria"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "m-cabo-coaxial",
+      "name": "Cabo Coaxial",
+      "unit": "m",
+      "unitCents": 112
+    },
+    {
+      "id": "m-cabo-utp",
+      "name": "Cabo UTP",
+      "unit": "m",
+      "unitCents": 66
+    },
+    {
+      "id": "m-cabo-xv-3x4mm",
+      "name": "Cabo XV 3x4mm",
+      "unit": "m",
+      "unitCents": 350
+    },
+    {
+      "id": "m-caixa-p-pladur",
+      "name": "Caixa p/ pladur",
+      "unit": "un",
+      "unitCents": 68
+    },
+    {
+      "id": "m-centro-de-tomada",
+      "name": "Centro de tomada",
+      "unit": "un",
+      "unitCents": 105
+    },
+    {
+      "id": "m-centro-de-tomada-fibra",
+      "name": "Centro de tomada fibra",
+      "unit": "un",
+      "unitCents": 459
+    },
+    {
+      "id": "m-centro-de-tomada-mista-tv-net",
+      "name": "Centro de tomada mista (tv-net)",
+      "unit": "un",
+      "unitCents": 131
+    },
+    {
+      "id": "m-chapa-p-pladur",
+      "name": "Chapa p/ pladur",
+      "unit": "un",
+      "unitCents": 383
+    },
+    {
+      "id": "m-comutadores-de-escada-duplo",
+      "name": "Comutadores de escada duplo",
+      "unit": "un",
+      "unitCents": 380
+    },
+    {
+      "id": "m-curva-de-sanita",
+      "name": "Curva de sanita",
+      "unit": "un",
+      "unitCents": 275
+    },
+    {
+      "id": "m-curva-multicamada-16-1-2",
+      "name": "Curva multicamada 16-1/2",
+      "unit": "un",
+      "unitCents": 179
+    },
+    {
+      "id": "m-curva-pvc-40",
+      "name": "Curva pvc 40",
+      "unit": "un",
+      "unitCents": 68
+    },
+    {
+      "id": "m-curva-pvc-50",
+      "name": "Curva pvc 50",
+      "unit": "un",
+      "unitCents": 121
+    },
+    {
+      "id": "m-curva-pvc-75",
+      "name": "Curva PVC 75",
+      "unit": "un",
+      "unitCents": 125
+    },
+    {
+      "id": "m-curva-pvc-90",
+      "name": "Curva pvc 90",
+      "unit": "un",
+      "unitCents": 169
+    },
+    {
+      "id": "m-disjuntor-10a",
+      "name": "Disjuntor 10A",
+      "unit": "un",
+      "unitCents": 213
+    },
+    {
+      "id": "m-disjuntor-16a",
+      "name": "Disjuntor 16A",
+      "unit": "un",
+      "unitCents": 213
+    },
+    {
+      "id": "m-disjuntor-20a",
+      "name": "Disjuntor 20A",
+      "unit": "un",
+      "unitCents": 216
+    },
+    {
+      "id": "m-espelho-simples",
+      "name": "Espelho simples",
+      "unit": "un",
+      "unitCents": 65
+    },
+    {
+      "id": "m-int-duplo",
+      "name": "Int. duplo",
+      "unit": "un",
+      "unitCents": 280
+    },
+    {
+      "id": "m-int-estore",
+      "name": "Int. estore",
+      "unit": "un",
+      "unitCents": 345
+    },
+    {
+      "id": "m-int-simples",
+      "name": "Int. simples",
+      "unit": "un",
+      "unitCents": 149
+    },
+    {
+      "id": "m-sifao-125x50x75",
+      "name": "Sifão 125x50x75",
+      "unit": "un",
+      "unitCents": 999
+    },
+    {
+      "id": "m-tecla-de-estore",
+      "name": "Tecla de estore",
+      "unit": "un",
+      "unitCents": 468
+    },
+    {
+      "id": "m-tecla-dupla",
+      "name": "Tecla dupla",
+      "unit": "un",
+      "unitCents": 77
+    },
+    {
+      "id": "m-tecla-simples",
+      "name": "Tecla simples",
+      "unit": "un",
+      "unitCents": 91
+    },
+    {
+      "id": "m-tomada",
+      "name": "Tomada",
+      "unit": "un",
+      "unitCents": 220
+    },
+    {
+      "id": "m-tomada-fibra",
+      "name": "Tomada fibra",
+      "unit": "un",
+      "unitCents": 75
+    },
+    {
+      "id": "m-tomada-mista-tv-net",
+      "name": "Tomada mista (tv-net)",
+      "unit": "un",
+      "unitCents": 878
+    },
+    {
+      "id": "m-torneira-de-esquadria-1-2-1-2",
+      "name": "Torneira de esquadria 1/2-1/2",
+      "unit": "un",
+      "unitCents": 215
+    },
+    {
+      "id": "m-torneira-de-esquadria-1-2-3-4",
+      "name": "Torneira de esquadria 1/2-3/4",
+      "unit": "un",
+      "unitCents": 225
+    },
+    {
+      "id": "m-tubo-anelado-25-verde",
+      "name": "Tubo anelado 25 verde",
+      "unit": "m",
+      "unitCents": 62
+    },
+    {
+      "id": "m-tubo-anelado-25-vermelho",
+      "name": "Tubo anelado 25 vermelho",
+      "unit": "m",
+      "unitCents": 62
+    },
+    {
+      "id": "m-tubo-multicamada-16-c-isolamento",
+      "name": "Tubo multicamada 16 c/isolamento",
+      "unit": "m",
+      "unitCents": 230
+    },
+    {
+      "id": "m-tubo-multicamada-20-c-isolamento",
+      "name": "Tubo multicamada 20 c/isolamento",
+      "unit": "m",
+      "unitCents": 286
+    },
+    {
+      "id": "m-tubo-pre-enfiado-3x1-5",
+      "name": "Tubo pré-enfiado 3x1.5",
+      "unit": "m",
+      "unitCents": 158
+    },
+    {
+      "id": "m-tubo-pre-enfiado-3x2-5",
+      "name": "Tubo pré-enfiado 3x2.5",
+      "unit": "m",
+      "unitCents": 191
+    },
+    {
+      "id": "m-tubo-pre-enfiado-4x1-5",
+      "name": "Tubo pré-enfiado 4x1.5",
+      "unit": "m",
+      "unitCents": 155
+    },
+    {
+      "id": "m-tubo-pre-enfiado-5x1-5",
+      "name": "Tubo pré-enfiado 5x1.5",
+      "unit": "m",
+      "unitCents": 185
+    },
+    {
+      "id": "m-tubo-pvc-40",
+      "name": "Tubo pvc 40",
+      "unit": "m",
+      "unitCents": 169
+    },
+    {
+      "id": "m-tubo-pvc-50",
+      "name": "Tubo pvc 50",
+      "unit": "m",
+      "unitCents": 209
+    },
+    {
+      "id": "m-tubo-pvc-75",
+      "name": "Tubo pvc 75",
+      "unit": "m",
+      "unitCents": 776
+    },
+    {
+      "id": "m-tubo-pvc-90",
+      "name": "Tubo pvc 90",
+      "unit": "m",
+      "unitCents": 995
+    }
+  ],
+  "version": "4c7aa8c70c16"
+}

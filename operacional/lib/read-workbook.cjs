@@ -27,7 +27,9 @@ if (!isMainThread && require.main === module) {
     let sheets;
     try { sheets = await require('read-excel-file/node').default(Buffer.from(workerData.bytes)); }
     catch { throw Error('Não foi possível ler o ficheiro .xlsx. Verifique o formato e se está protegido.'); }
-    const data = require('./company-import.cjs').readRows(sheets);
+    const data = workerData.format === 'catalog'
+      ? require('./estimate-catalog.cjs').buildCatalog(sheets)
+      : require('./company-import.cjs').readRows(sheets);
     parentPort.postMessage({type:'workbook-ready', data});
   })().catch(error => parentPort.postMessage({type:'workbook-error', error:error.message}));
 }

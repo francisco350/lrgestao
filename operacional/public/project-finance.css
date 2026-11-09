@@ -10,6 +10,27 @@
 @media(max-width:600px){.finance-result-stats{grid-template-columns:1fr}}
 .project-finance-stats .stat-value{font-size:28px;overflow-wrap:anywhere}
 .project-finance-stats .stat{min-width:0}
+.finance-card{font:inherit;text-align:left;color:inherit;cursor:pointer}
+.finance-card:hover,.finance-card:focus-visible{border-color:currentColor}
+.finance-card .stat-value,.finance-card .stat-note{display:block}
+.finance-card .stat-top span{font-size:16px}
+.finance-detail{width:min(620px,calc(100% - 30px));max-height:85dvh;overflow:auto}
+.finance-detail .modal-head{margin-bottom:6px}
+.finance-detail p,.finance-detail li small{color:var(--muted);font-size:13px}
+.finance-detail-total,.finance-detail li{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:14px 0}
+.finance-detail-total{border-bottom:1px solid var(--line);font-size:18px}
+.finance-detail ul{list-style:none;padding:0;margin:0}
+.finance-detail li+li{border-top:1px solid var(--line)}
+.finance-detail li div{min-width:0;overflow-wrap:anywhere}
+.finance-detail li small{display:block;margin-top:5px}
+.finance-detail li b{white-space:nowrap}
+.finance-calculation{margin-top:16px;padding-top:16px;border-top:2px solid var(--line);font-variant-numeric:tabular-nums}
+.finance-calculation h3{font-size:16px;margin:0}
+.finance-calculation dl{margin:12px 0}
+.finance-calculation dl div,.finance-equation{display:flex;justify-content:space-between;gap:8px 16px;flex-wrap:wrap}
+.finance-calculation dl div+div{margin-top:6px}
+.finance-calculation dd{margin:0}
+.finance-equation{border-top:1px solid var(--line);padding-top:12px}
 .project-monthly .panel{margin-bottom:20px}
 .project-monthly .row-actions{display:flex;gap:8px;flex-wrap:wrap}
 .project-monthly .finance-total td{font-weight:700;border-top:2px solid var(--line,#dfe5d7)}

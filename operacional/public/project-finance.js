@@ -25,17 +25,122 @@ function projectAccountsPage(id=''){
 }
 function financePositionStats(project){
   const s=ProjectFinance.position(state,project,financeRange.from,financeRange.until);
-  const card=(label,value,note)=>stat(label,`<span class="${value<0?'settlement-due':'settlement-paid'}">${euro(value)}</span>`,note);
-  return `<section class="stats finance-result-stats" aria-label="Lucro estimado e saldo atual">${card('Lucro estimado',s.profit,'Cobranças previstas − custos registados no período selecionado.')}${card('Saldo atual',s.balance,'Recebido − pago apenas no período selecionado.')}</section>`;
+  const card=key=>financeCard(key,s[key],s[key]<0?'settlement-due':'settlement-paid');
+  return `<section class="stats finance-result-stats" aria-label="Lucro estimado e saldo atual">${card('profit')}${card('balance')}</section>`;
 }
 function monthlyCostCategories(s){
   const row=(r,total=false)=>`<tr class="${total?'finance-total':''}"><td>${esc(r.label)}</td><td>${euro(r.cost)}</td><td class="settlement-paid">${euro(r.paid)}</td><td class="${r.due>0?'settlement-due':'settlement-paid'}">${euro(r.due)}</td><td>${r.unknown?badge(euro(r.unknown),'amber'):'—'}</td></tr>`;
   return panel('Custos por categoria','Custos e pagamentos do período. O saldo por pagar inclui pendências anteriores até ao fecho.',table(['Categoria','Custo no período','Pago no período','Por pagar no fecho','Por confirmar'],s.rows.map(r=>row(r)).concat(row({label:'Total',...s.totals},true))))+`<p class="finance-scope">A mão de obra inclui apenas trabalho validado. Adiantamentos e pagamentos à equipa sem obra atribuída entram no apuramento mensal. Valores por confirmar ainda não entram no saldo por pagar.</p>`;
 }
-function financeMainStats(s,allCosts=false){
-  const scope=allCosts?'Materiais, despesas e mão de obra':'Materiais e despesas';
-  return `<section class="stats project-finance-stats" aria-label="Resumo de recebimentos e pagamentos">${stat('Por receber',euro(s.receivable),'Do cliente · saldo até ao fim do período')}${stat('Recebido',euro(s.received),'Do cliente · entradas no período')}${stat('Por pagar',euro(s.due),scope+' · saldo até ao fim do período')}${stat('Pago',euro(s.paid),scope+' · saídas no período')}</section>`;
+const financeCards={
+  receivable:['Por receber','Do cliente · saldo até ao fim do período'],
+  received:['Recebido','Do cliente · entradas no período'],
+  due:['Por pagar','Materiais, despesas e mão de obra · saldo até ao fim do período'],
+  paid:['Pago','Materiais, despesas e mão de obra · saídas no período'],
+  profit:['Lucro estimado','Cobranças previstas − custos registados no período selecionado.'],
+  balance:['Saldo atual','Recebimentos − pagamentos no período selecionado.']
+};
+function financeCard(key,value,tone=''){
+  const [label,note]=financeCards[key];
+  return `<button type="button" class="stat finance-card" data-finance-card="${key}" aria-haspopup="dialog">
+    <span class="stat-top">${label}<span aria-hidden="true">↗</span></span>
+    <span class="stat-value ${tone}">${euro(value)}</span><span class="stat-note">${note}</span>
+  </button>`;
 }
+function financeMainStats(s){
+  const cards=['receivable','received','due','paid'].map(key=>financeCard(key,s[key])).join('');
+  return `<section class="stats project-finance-stats" aria-label="Resumo de recebimentos e pagamentos">${cards}</section>`;
+}
+function openFinanceDetail(card){
+  const metric=card.dataset.financeCard;
+  const project=$('#finance-project').value||undefined;
+  const {from,until}=financeRange;
+  const isBalance=metric==='due'||metric==='receivable';
+  const incoming=metric==='received'||metric==='receivable';
+  const label=financeCards[metric][0];
+  const rows=ProjectFinance.accountDetails(state,metric,project,from,until)
+    .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const total=ProjectFinance.money(rows.reduce((n,r)=>n+r.amount,0));
+  let calculation='';
+  if(metric==='profit'||metric==='balance'){
+    const profit=metric==='profit';
+    let additions=0, deductions=0;
+    for(const {amount} of rows){
+      const cents=Math.round(Math.abs(amount)*100);
+      if(amount<0)deductions+=cents;
+      else additions+=cents;
+    }
+    const added=euro(additions/100), deducted=euro(deductions/100);
+    calculation=`<section class="finance-calculation" aria-labelledby="finance-calculation-title">
+      <h3 id="finance-calculation-title">Resumo do cálculo</h3>
+      <dl><div><dt>${profit?'Cobranças previstas':'Recebimentos'}</dt><dd>${added}</dd></div>
+        <div><dt>${profit?'Custos registados':'Pagamentos'}</dt><dd>${deducted}</dd></div></dl>
+      <div class="finance-equation"><strong>${label}</strong><b>${added} − ${deducted} = ${euro(total)}</b></div>
+    </section>`;
+  }
+  const period=isBalance
+    ? (until?'Saldo até '+fullDate(until):'Saldo acumulado')
+    : [from&&'Desde '+fullDate(from),until&&'até '+fullDate(until)].filter(Boolean).join(' ')||'Todo o período';
+  const scope=project?worksite(project).name:'Todas as obras';
+  const items=rows.map(r=>{
+    const employee=r.employee&&person(r.employee)?.name;
+    const context=[];
+    if(!project){
+      if(r.project)context.push(worksite(r.project)?.name);
+      else if(!r.employee)context.push('Custos gerais');
+      else if(!isBalance)context.push('Sem obra atribuída');
+    }
+    context.push(r.category,r.party,r.date&&fullDate(r.date),r.method,r.note);
+    const amounts=isBalance?`<small>${r.employee?'Trabalho validado':incoming?'Cobrança':'Custo'} ${euro(r.original)} · ${incoming?'Recebido':'Pago'} ${euro(r.settled)}</small>`:'';
+    return `<li><div><strong>${esc(employee||r.description)}</strong>
+      <small>${esc([employee&&r.description,...context].filter(Boolean).join(' · '))}</small>${amounts}</div>
+      <b>${euro(r.amount)}</b></li>`;
+  }).join('');
+  showAccountDialog(card,label,total,scope+' · '+period,items,calculation);
+}
+function showAccountDialog(card,label,total,context,items,calculation){
+  const dialog=document.createElement('dialog');
+  dialog.className='finance-detail';
+  dialog.setAttribute('aria-labelledby','finance-detail-title');
+  dialog.innerHTML=`<div class="modal-head"><h2 id="finance-detail-title">${esc(label)}</h2>
+    <form method="dialog"><button class="icon-button" aria-label="Fechar detalhe" autofocus>×</button></form></div>
+    <p>${esc(context)}</p>
+    <div class="finance-detail-total"><span>Total</span><strong>${euro(total)}</strong></div>
+    ${items?'<ul>'+items+'</ul>':'<p class="empty">Sem valores a apresentar para esta seleção.</p>'}
+    ${calculation}`;
+  card.parentElement.after(dialog);
+  dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+  dialog.showModal();
+}
+let sectionDetails=[];
+function sectionAccountCards(cards,from,until,scope){
+  const dates=[from&&'Desde '+fullDate(from),until&&'até '+fullDate(until)].filter(Boolean).join(' ');
+  sectionDetails=cards.map(([label,note,rows,subtract])=>({
+    label,note,rows,subtract,context:scope+' · '+(dates||'Todo o período'),
+    total:money(rows.reduce((sum,row)=>sum+row.amount,0))
+  }));
+  return '<section class="stats">'+sectionDetails.map((card,index)=>`<button type="button" class="stat finance-card" data-section-detail="${index}" aria-haspopup="dialog">
+    <span class="stat-top">${esc(card.label)}<span aria-hidden="true">↗</span></span><span class="stat-value">${euro(card.total)}</span><span class="stat-note">${esc(card.note)}</span></button>`).join('')+'</section>';
+}
+document.addEventListener('click',event=>{
+  const button=event.target.closest('[data-section-detail]');
+  if(!button)return;
+  const {label,rows,subtract,total,context}=sectionDetails[button.dataset.sectionDetail];
+  const groups=new Map();
+  let original=0,settled=0;
+  const items=[...rows].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{
+    groups.set(r.group,(groups.get(r.group)||0)+r.amount);
+    if(subtract){original+=r.original;settled+=r.settled;}
+    const info=[...new Set([worksite(r.project)?.name||'Custos gerais',r.party,fullDate(r.date),r.group].filter(value=>value&&value!==r.description))];
+    return `<li><div><strong>${esc(r.description||r.group)}</strong><small>${esc(info.join(' · '))}</small>
+      ${subtract?`<small>Cobrança ${euro(r.original)} · Recebido ${euro(r.settled)}</small>`:''}</div><b>${euro(r.amount)}</b></li>`;
+  }).join('');
+  const parts=subtract?[['Cobranças em aberto',original],['Já recebido nessas cobranças',settled]]:[...groups];
+  const terms=parts.map(([,value])=>euro(money(value))).join(subtract?' − ':' + ')||euro(0);
+  const calculation=`<section class="finance-calculation"><h3>Resumo do cálculo</h3><dl>${parts.map(([name,value])=>`<div><dt>${esc(name)}</dt><dd>${euro(money(value))}</dd></div>`).join('')}</dl>
+    <div class="finance-equation"><strong>${esc(label)}</strong><b>${terms} = ${euro(total)}</b></div></section>`;
+  showAccountDialog(button,label,total,context,items,calculation);
+});
 function generalCostsPanel(){
   const {from,until}=financeRange,F=ProjectFinance;
   const costs=state.costs.filter(c=>c.project===null&&(F.inPeriod(c.date,from,until)||c.date<from&&F.costBalance(state,c,until).due>0)).sort((a,b)=>b.date.localeCompare(a.date));
@@ -121,6 +226,8 @@ document.addEventListener('change',event=>{
   financeRange={from,until};render();
 });
 document.addEventListener('click',event=>{
+  const card=event.target.closest('[data-finance-card]');
+  if(card){openFinanceDetail(card);return;}
   const jump=event.target.closest('[data-finance-jump]');
   if(jump){document.getElementById('finance-'+jump.dataset.financeJump)?.scrollIntoView({block:'start',behavior:'smooth'});return;}
   const el=event.target.closest('[data-action]');if(!el)return;const id=el.dataset.id;

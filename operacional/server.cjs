@@ -3,6 +3,8 @@ const {openStore,readState,mutate,audit,publicUser}=require('./lib/store.cjs');
 const {hashPassword,verifyPassword,validatePassword,token,digest}=require('./lib/auth.cjs');
 const D=require('./lib/domain.cjs');
 const A=require('./lib/attachments.cjs');
+const {estimateProject,estimateBathroom}=require('./lib/bathroom-estimate.cjs');
+const Catalog=require('./lib/estimate-catalog.cjs');
 const {applyImport}=require('./lib/company-import.cjs');
 const {readWorkbook}=require('./lib/read-workbook.cjs');
 const Trial=require('./lib/trial.cjs');
@@ -86,6 +88,79 @@ function createApplication({database=path.join(__dirname,'data','lino.sqlite'),o
             if(!Object.values(report.summary).some(item=>item.created))D.fail('Todas as linhas já existem nesta empresa.');
           });
           return json(res,200,{revision,...report});
+        }
+        if(url.pathname==='/api/project-estimates'){
+          requireAdmin(s);
+          if(!lino)D.fail('Sem acesso ao simulador.',403);
+          if(req.method==='GET'){
+            const id=url.searchParams.get('id');
+            if(id){
+              const row=db.prepare('SELECT document FROM project_estimates WHERE id=?').get(id);
+              if(!row)D.fail('Orçamento não encontrado.',404);
+              return json(res,200,JSON.parse(row.document));
+            }
+            const project=url.searchParams.get('project');
+            const query='SELECT id,project,title,created,total_cents FROM project_estimates';
+            const rows=project?db.prepare(query+' WHERE project=? ORDER BY created DESC').all(project):db.prepare(query+' ORDER BY created DESC').all();
+            return json(res,200,{rows});
+          }
+          if(req.method!=='POST')D.fail('Método não suportado.',405);
+          const input=await body(req),actor=authenticated(req);requireAdmin(actor);
+          if(actor.must_change)D.fail('Altere a palavra-passe antes de continuar.',428);
+          if(typeof input.id!=='string'||!/^\w{8}-[\da-f-]{27}$/i.test(input.id))D.fail('Identificador inválido.');
+          const title=D.text(input.title,120), note=input.note?D.text(input.note,400):'';
+          db.exec('BEGIN IMMEDIATE');
+          try{
+            const existing=db.prepare('SELECT author,document FROM project_estimates WHERE id=?').get(input.id);
+            if(existing){
+              const previous=JSON.parse(existing.document);
+              if(existing.author!==actor.id||previous.project!==input.project||previous.title!==title||previous.note!==note||previous.result.version!==input.version||JSON.stringify(previous.selections)!==JSON.stringify(input.selections))D.fail('Identificador de orçamento já utilizado.',409);
+            }else{
+              if(!readState(db).projects.some(p=>p.id===input.project))D.fail('Selecione uma obra existente.');
+              const catalog=Catalog.activeCatalog(db);
+              if(catalog.version!==input.version)D.fail('O preçário mudou. Atualize e recalcule o orçamento.',409);
+              const result=estimateProject(catalog,input.selections),created=new Date().toISOString();
+              const record={id:input.id,title,project:input.project,note,created,result,selections:input.selections};
+              db.prepare('INSERT INTO project_estimates VALUES(?,?,?,?,?,?,?)').run(input.id,input.project,title,created,actor.id,result.subtotalCents,JSON.stringify(record));
+              audit(db,actor.id,'estimate_saved',input.id);
+            }
+            db.exec('COMMIT');
+          }catch(error){db.exec('ROLLBACK');throw error;}
+          return json(res,200,{id:input.id});
+        }
+        if(['/api/estimate-catalog','/api/estimate-catalog/edit','/api/estimate','/api/bathroom-estimate'].includes(url.pathname)){
+          requireAdmin(s);
+          if(!lino)D.fail('Sem preçário para esta empresa.',403);
+          if(req.method==='GET'&&url.pathname==='/api/estimate-catalog')return json(res,200,Catalog.description(Catalog.activeCatalog(db)));
+          if(req.method!=='POST')D.fail('Método não suportado.',405);
+          const editing=url.pathname==='/api/estimate-catalog/edit';
+          if(editing||url.pathname==='/api/estimate-catalog'){
+              const input=await body(req,editing?256*1024:5*1024*1024);
+              let imported;
+              if(!editing){
+                if(uploadsInFlight>=2)D.fail('Importação em curso. Tente novamente.',429);
+                if(typeof input.content!=='string'||input.content.length>4*1024*1024)D.fail('Selecione um ficheiro .xlsx até 3 MB.');
+                uploadsInFlight++;
+                try{imported=await Catalog.importWorkbook(Buffer.from(input.content,'base64'));}finally{uploadsInFlight--;}
+              }
+              const fresh=authenticated(req);requireAdmin(fresh);
+              if(fresh.must_change)D.fail('Altere a palavra-passe antes de continuar.',428);
+              db.exec('BEGIN IMMEDIATE');
+              try{
+                const current=Catalog.activeCatalog(db);
+                if(input.version!==current.version)D.fail('O preçário mudou noutra sessão. Consulte a versão atual antes de repetir.',409);
+                const next=editing?Catalog.editCatalog(current,input):imported;
+                db.prepare('UPDATE estimate_catalog SET document=? WHERE id=1').run(JSON.stringify(next));
+                audit(db,s.id,editing?'estimate_catalog_'+input.type:'estimate_catalog_import',next.version);
+                db.exec('COMMIT');
+                return json(res,200,Catalog.description(next));
+              }catch(error){db.exec('ROLLBACK');throw error;}
+          }
+          const input=await body(req);
+          const currentCatalog=Catalog.activeCatalog(db);
+          if(url.pathname==='/api/bathroom-estimate')return json(res,200,estimateBathroom(currentCatalog,input));
+          if(input.version!==currentCatalog.version)D.fail('O preçário mudou. Atualize a página antes de calcular.',409);
+          return json(res,200,estimateProject(currentCatalog,input.selections));
         }
         if(url.pathname==='/api/company'){
           requireAdmin(s);

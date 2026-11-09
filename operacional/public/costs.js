@@ -37,9 +37,18 @@ function costPeriodSummary(project=costProject,from=costFrom,until=costUntil){re
 });}
 function costsView(){
   if(costProject&&!state.projects.some(p=>p.id===costProject))costProject='';
-  const summaries=costPeriodSummary(),sum=key=>money(summaries.reduce((s,r)=>s+r[key],0));
+  const summaries=costPeriodSummary(), projects=new Set(summaries.map(r=>r.project));
+  const included=r=>projects.has(r.project)&&costInPeriod(r,costFrom,costUntil);
+  const costs=state.costs.filter(r=>included(r)&&!r.voided).map(r=>({...r,group:costKinds[r.kind],party:r.supplier}));
+  const labour=state.entries.filter(r=>included(r)&&r.status==='approved').map(r=>({...r,description:person(r.employee)?.name,group:'Mão de obra',amount:amount(r)}));
+  const cards=sectionAccountCards([
+    ['Materiais','Custos ativos de materiais',costs.filter(r=>r.kind==='material').map(r=>({...r,group:r.description}))],
+    ['Outras despesas','Transporte, serviços e outros',costs.filter(r=>r.kind==='expense').map(r=>({...r,group:r.category||'Outras despesas'}))],
+    ['Mão de obra','Apenas trabalho validado',labour.map(r=>({...r,group:r.description||'Mão de obra'}))],
+    ['Total indicativo','Materiais + despesas + mão de obra',[...costs,...labour]]
+  ],costFrom,costUntil,worksite(costProject)?.name||'Todas as obras');
   return heading('Custos da obra','Registe os custos de cada obra e acompanhe a sua composição.','<a class="btn" href="#inventario">Inventário</a>'+btn('+ Material','new-material',true)+btn('+ Despesa','new-expense')+(costProject?btn('Ver contas desta obra','project-costs',true,costProject):'<a class="btn primary" href="#obras/contas">Contas mensais</a>'))+
-    monthPicker('custos',dateRangeFields('cost-from','cost-until',costFrom,costUntil))+`<div class="cost-filters">${costFilter('cost-project','Obra a consultar',[['','Todas as obras'],...state.projects.map(p=>[p.id,p.name])],costProject)}</div><section class="stats">${stat('Materiais',euro(sum('materials')),'Custos ativos de materiais')}${stat('Outras despesas',euro(sum('expenses')),'Transporte, serviços e outros')}${stat('Mão de obra',euro(sum('labour')),'Apenas trabalho validado')}${stat('Total indicativo',euro(sum('total')),'Materiais + despesas + mão de obra')}</section>`+
+    monthPicker('custos',dateRangeFields('cost-from','cost-until',costFrom,costUntil))+`<div class="cost-filters">${costFilter('cost-project','Obra a consultar',[['','Todas as obras'],...state.projects.map(p=>[p.id,p.name])],costProject)}</div>${cards}`+
     panel('Custos por obra','Período selecionado; campos de data vazios incluem todas as datas. Anulações excluídas dos totais.',table(['Obra','Materiais','Despesas','Mão de obra','Total indicativo','Ações'],summaries.map(s=>`<tr><td><strong>${esc(worksite(s.project)?.name||'Custos gerais')}</strong><small>${esc(worksite(s.project)?.client)}</small></td><td>${euro(s.materials)}</td><td>${euro(s.expenses)}</td><td>${euro(s.labour)}</td><td><strong>${euro(s.total)}</strong></td><td>${btn('Ver contas','project-costs',false,s.project)}</td></tr>`)))+
     `<details class="notice cost-note info-disclosure"><summary>Informação</summary><div>Registe os custos finais de materiais e despesas, incluindo IVA quando aplicável. A mão de obra é calculada pela remuneração dos registos validados, sem encargos adicionais. O total é indicativo e não representa lucro, saldo de caixa ou tratamento fiscal do IVA. Registar uma despesa não regista o seu pagamento.</div></details>`+
     `<div class="tabs" aria-label="Detalhe de custos">${[['labour','Funcionários'],['material','Materiais'],['expense','Outras despesas']].map(([id,label])=>`<button type="button" class="btn ${costTab===id?'selected':''}" data-cost-tab="${id}" aria-pressed="${costTab===id}">${label}</button>`).join('')}</div>`+

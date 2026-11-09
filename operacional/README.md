@@ -4,7 +4,9 @@ Aplicação independente com contas próprias por utilizador e palavra-passe, SQ
 
 ## Executar
 
-Requer Node.js 24 ou superior. O servidor não depende de pacotes externos.
+Requer Node.js 24 ou superior. Execute `npm ci` na pasta principal para instalar as dependências, incluindo o leitor de ficheiros Excel.
+
+Em **Obras e recursos → Simulador de orçamentos → Gerir preçário**, o administrador da Lino Rua pode criar materiais, editar unidades e preços, definir o preço da mão de obra e ajustar a área, as horas e os materiais de cada composição. Os materiais partilham o mesmo preço em todas as divisões. A aplicação inicializa o preçário na base SQLite da empresa com os valores do mapa fornecido. O Excel é opcional. Em **Importar preçário de Excel**, uma importação válida substitui o preçário atual por um mapa no formato fornecido (até 3 MB). **Carregar obra de exemplo** carrega o projeto de exemplo.
 
 1. Na pasta principal, executar `npm run future:seed` apenas na primeira utilização. Cria dados fictícios e quatro contas, com palavras-passe aleatórias mostradas uma vez na saída. Se já houver dados, recusa substituí-los.
 2. Guardar os acessos mostrados. Não os incluir no Git nem em documentação pública.

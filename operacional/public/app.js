@@ -42,6 +42,7 @@ function visibleWorkerSections(){
 const routes=()=>[
   ['resumo','Visão geral','▦'],['ponto','Picar o ponto','◴'],['trabalho','Registos de trabalho','◷'],
   ['obras','Obras','⌂'],...(admin()?[['clientes','Clientes','♧']]:[]),
+  ...(admin()&&['linorua','local'].includes(current.company?.id)?[['simulador','Simulador de orçamentos','€']]:[]),
   ...(current.role!=='worker'?[['equipa','Equipa','♧']]:[]),
   ['planeamento','Agenda','▦'],['horas','Mapa de horas','▥'],
   ...(admin()?[['inventario','Inventário','▦'],['custos','Materiais e despesas','▤'],['recebimentos','Recebimentos','€']]:[]),
@@ -60,7 +61,7 @@ function sidebarLinks(){
   }
   const groups=[
     ['Trabalho e equipa',['planeamento','ponto','trabalho','horas','equipa','ausencias']],
-    ['Obras e recursos',['obras','clientes','inventario']],
+    ['Obras e recursos',['obras','simulador','clientes','inventario']],
     ['Finanças',['custos','pagamentos','recebimentos']],
     [admin()?'Administração':'Conta',['utilizadores','historico','conta']]
   ];
@@ -83,7 +84,13 @@ function render(){
   if(!routes().some(r=>r[0]===next))next=routes()[0][0];
   if(page!==next){page=next;query='';}shell();
   const id=detail||parts[0]==='contas'?parts[1]||'':'';
-  $('#app').innerHTML=accounts&&page==='obras'&&admin()?projectAccountsPage(id):detail&&page==='obras'?projectDetail(id):({resumo:home,planeamento:planningView,ausencias:absencesView,horas:hoursView,ponto:clockView,inventario:inventoryView,custos:costsView,clientes:clientView,recebimentos:receivablesView,equipa:team,obras:projects,trabalho:work,pagamentos:payroll,utilizadores:userView,historico:auditView,conta:account}[page])();
+  $('#app').innerHTML=accounts&&page==='obras'&&admin()?projectAccountsPage(id):detail&&page==='obras'?projectDetail(id):({resumo:home,simulador:bathroomEstimateView,planeamento:planningView,ausencias:absencesView,horas:hoursView,ponto:clockView,inventario:inventoryView,custos:costsView,clientes:clientView,recebimentos:receivablesView,equipa:team,obras:projects,trabalho:work,pagamentos:payroll,utilizadores:userView,historico:auditView,conta:account}[page])();
+  if(page==='simulador')openEstimateWorkspace();
+  if(detail&&!accounts&&page==='obras'&&worksite(id)&&routes().some(([key])=>key==='simulador')){
+    const saved=document.createElement('div');
+    $('#app').append(saved);
+    showSavedEstimates(saved,id);
+  }
 }
 function home(){return overview();}
 function team(){return heading('A sua equipa','Cada pessoa com a sua função e responsabilidade.',admin()?btn('+ Adicionar funcionário','new-employee',true):'')+panel('Funcionários','As alterações à remuneração preservam os valores dos registos anteriores.',searchableDirectory('equipa',{
