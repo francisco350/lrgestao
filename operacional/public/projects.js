@@ -1,10 +1,10 @@
 'use strict';
 let workFilter={project:'',employee:'',status:'',from:'',until:''},filterOwner='';
 function resetWorkFilters(){workFilter={project:'',employee:'',status:'',from:'',until:''};filterOwner=current?.id;}
-function checkWorkScope(){if(filterOwner!==current?.id){resetWorkFilters();Object.assign(workFilter,currentMonthRange());}if(workFilter.project&&!worksite(workFilter.project))workFilter.project='';if(workFilter.employee&&!person(workFilter.employee))workFilter.employee='';}
-function workMatches(r,withStatus=true){checkWorkScope();return !!r&&(!workFilter.project||r.project===workFilter.project)&&(!workFilter.employee||r.employee===workFilter.employee)&&(!withStatus||!workFilter.status||r.status===workFilter.status)&&(!workFilter.from||r.date>=workFilter.from)&&(!workFilter.until||r.date<=workFilter.until);}
+function checkWorkScope(){if(filterOwner!==current?.id){resetWorkFilters();Object.assign(workFilter,currentMonthRange());}workFilter.project=HoursReport.selected(workFilter.project).filter(worksite);workFilter.employee=HoursReport.selected(workFilter.employee).filter(person);}
+function workMatches(r,withStatus=true){return !!r&&HoursReport.accepts(workFilter.project,r.project)&&HoursReport.accepts(workFilter.employee,r.employee)&&(!withStatus||HoursReport.accepts(workFilter.status,r.status))&&(!workFilter.from||r.date>=workFilter.from)&&(!workFilter.until||r.date<=workFilter.until);}
 function optionalSelect(...args){return select(...args).replace(' required','');}
-function workFilters(){checkWorkScope();const rows=state.entries.filter(r=>workMatches(r));return `${workReturn&&workReturn.owner===current.id?`<a class="btn" href="${esc(workReturn.hash)}">${esc(workReturn.label)}</a>`:''}${monthPicker('trabalho')}<section class="panel work-filter-panel"><form id="work-filters" class="work-filters">${optionalSelect('project','Filtrar por obra',[['','Todas as obras'],...state.projects.map(p=>[p.id,p.name])],workFilter.project)}${optionalSelect('employee','Filtrar por funcionário',[['','Todos os funcionários'],...state.employees.map(e=>[e.id,e.name])],workFilter.employee)}${optionalSelect('status','Filtrar por estado',[['','Todos os estados'],['pending','Por validar'],['approved','Validado'],['rejected','Rejeitado']],workFilter.status)}${input('from','Trabalho desde',workFilter.from,'date')}${input('until','Trabalho até',workFilter.until,'date')}<div class="actions"><button type="submit" class="btn primary">Aplicar filtros</button>${btn('Limpar filtros','work-clear')}</div></form><div class="filter-foot"><span>${rows.length} registo(s) · ${hours(rows.reduce((s,r)=>s+r.minutes,0))} no filtro · inclui os estados selecionados</span><div class="actions">${btn('Hoje','work-today')}${btn('Esta semana','work-week')}</div></div></section>`;}
+function workFilters(){checkWorkScope();const rows=state.entries.filter(r=>workMatches(r));return `${workReturn&&workReturn.owner===current.id?`<a class="btn" href="${esc(workReturn.hash)}">${esc(workReturn.label)}</a>`:''}${reportPeriodNavigation('work',workFilter)}<section class="panel work-filter-panel">${reportFilters('work',workFilter,state,[['pending','Por validar'],['approved','Validado'],['rejected','Rejeitado']])}<small>${rows.length} registo(s) · ${hours(rows.reduce((n,r)=>n+r.minutes,0))}</small></section>`;}
 function navigateWork(project='',statusValue=''){workReturn=null;resetWorkFilters();workFilter.project=project;workFilter.status=statusValue;if(location.hash==='#trabalho')render();else location.hash='trabalho';}
 const fullDate=s=>s?new Date(s+'T12:00:00').toLocaleDateString('pt-PT'):'Por definir';
 const lateProjects=()=>state.projects.filter(p=>p.status!=='Concluída'&&p.plannedEnd&&p.plannedEnd<today());
@@ -32,7 +32,6 @@ function projectDetail(id){
   result+=attachmentsPanel(id);
   return `<div class="project-detail">${result}</div>`;
 }
-document.addEventListener('submit',e=>{if(e.target.id!=='work-filters')return;e.preventDefault();const data=Object.fromEntries(new FormData(e.target));if(data.from&&data.until&&data.from>data.until)return toast('O início do período deve ser anterior ou igual ao fim.');workFilter=data;render();});
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-action]');if(!el)return;const id=el.dataset.id;
   switch(el.dataset.action){
@@ -63,6 +62,10 @@ function employeePending(employee,project=''){
   return rows.length?`${workShortcut(`${rows.length} por validar`,employee,project,'pending')}<small>${hours(rows.reduce((s,r)=>s+r.minutes,0))}</small>`:'Sem pendências';
 }
 document.addEventListener('click',e=>{
+  if(e.target.closest('.sidebar a[href="#trabalho"], [data-action="logout"]')){
+    workReturn=null;
+    if(location.hash==='#trabalho'&&e.target.closest('.sidebar a'))render();
+  }
   const link=e.target.closest('[data-work-employee]');
   if(link){
     const hash=location.hash||'#resumo';

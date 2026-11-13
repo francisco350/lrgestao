@@ -1,4 +1,4 @@
-(function(root,factory){const model=factory();if(typeof module==='object'&&module.exports)module.exports=model;else root.LinoOverview=model;})(globalThis,function(){
+(function(root,factory){const model=factory(typeof module==='object'&&module.exports?require('./project-finance-model.js'):root.ProjectFinance);if(typeof module==='object'&&module.exports)module.exports=model;else root.LinoOverview=model;})(globalThis,function(finance){
   'use strict';
   const money=n=>Math.round((n+Number.EPSILON)*100)/100;
   const amount=r=>money(r.minutes/60*r.unitRate/(r.payBasis==='hour'?1:r.dayHours));
@@ -7,7 +7,7 @@
     const balances=role==='manager'?[]:state.employees.map(e=>{
       const earned=money(approved.filter(r=>r.employee===e.id).reduce((sum,r)=>sum+amount(r),0));
       const paid=money(state.wagePayments.filter(p=>p.employee===e.id&&!p.voided&&p.date<=today).reduce((sum,p)=>sum+p.amount,0));
-      return {employee:e.id,balance:money(earned-paid)};
+      const h=finance.historicalWages(state,e.importCode,'',today);return {employee:e.id,balance:money(earned-paid+h.earned-h.paid)};
     });
     const result={works:state.projects.length,activeWorks:state.projects.filter(p=>p.status==='Em curso').length,pending:state.entries.filter(r=>r.status==='pending').length,minutes:approved.reduce((sum,r)=>sum+r.minutes,0),team:state.employees.filter(e=>e.active).length,balances};
     if(role!=='manager'){result.earned=money(approved.reduce((sum,r)=>sum+amount(r),0));result.wagesDue=money(balances.reduce((sum,b)=>sum+Math.max(0,b.balance),0));}

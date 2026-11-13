@@ -19,7 +19,7 @@ function bindEstimateEditor(container, catalog, save) {
   const cents = euros => Math.round(Number(euros)*100);
   const materialList = container.querySelector('[data-material-list]');
   function renderItems(search='') {
-    const matches = items.filter(i=>i.name.toLocaleLowerCase('pt').includes(search.trim().toLocaleLowerCase('pt')));
+    const matches = items.filter(i=>directoryMatches([i.name, i.unit], search));
     materialList.innerHTML = table(['Material','Unidade','Preço unitário',''],matches.map(i=>
       `<tr><td>${esc(i.name)}</td><td>${esc(i.unit)}</td><td>${euro(i.unitCents/100)}</td>
       <td><button class="btn" type="button" data-material="${esc(i.id)}" aria-label="Editar ${esc(i.name)}">Editar</button></td></tr>`));

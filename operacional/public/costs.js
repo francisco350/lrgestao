@@ -5,7 +5,7 @@ const costNumber=n=>new Intl.NumberFormat('pt-PT',{maximumFractionDigits:3}).for
 const costInPeriod=(r,from='',until='')=>(!from||r.date>=from)&&(!until||r.date<=until);
 function filteredCosts(){return state.costs.filter(c=>costInPeriod(c,costFrom,costUntil)&&(!costProject||c.project===costProject)&&(!costKind||c.kind===costKind)&&(costStatus==='all'||costStatus==='active'&&!c.voided||costStatus==='voided'&&c.voided)).sort((a,b)=>b.date.localeCompare(a.date));}
 function costFilter(id,label,options,value){return `<label class="range-field">${label}<select id="${id}" aria-label="${label}">${options.map(([v,t])=>`<option value="${esc(v)}" ${v===value?'selected':''}>${esc(t)}</option>`).join('')}</select></label>`;}
-function labourCostPanel(projectId='',from='',until=''){
+function labourCostPanel(projectId='',from='',until='',includePayments=true){
   if(!admin())return '';
   const groups=new Map();
   for(const r of state.entries.filter(r=>['approved','pending'].includes(r.status)&&costInPeriod(r,from,until)&&(!projectId||r.project===projectId))){
@@ -21,13 +21,17 @@ function labourCostPanel(projectId='',from='',until=''){
     const minutes=approved.reduce((s,r)=>s+r.minutes,0),paidMinutes=payments.reduce((s,p)=>s+(p.paidMinutes||0),0);
     const pending=g.rows.filter(r=>r.status==='pending');
     return `<tr><td>${esc(person(g.employee)?.name)}</td><td>${esc(worksite(g.project)?.name)}</td><td>${hours(minutes)}</td><td>${euro(total(approved))}</td><td>${euro(total(pending))}<small>${hours(pending.reduce((s,r)=>s+r.minutes,0))}</small></td><td class="settlement-paid">${euro(paid)}<small>${hours(Math.round(paidMinutes))}</small></td><td class="${due>0?'settlement-due':'settlement-paid'}">${euro(Math.max(0,due))}<small>${hours(Math.max(0,Math.round(minutes-paidMinutes)))}</small></td><td><div class="row-actions">${workShortcut('Ver registos',g.employee,g.project,'',from,until)}${pending.length?workShortcut('Ver pendentes',g.employee,g.project,'pending',from,until):''}<button class="btn" data-project-wage="${esc(g.project)}" data-employee="${esc(g.employee)}">Registar pagamento</button></div></td></tr>`;
-  })))+panel('Pagamentos de trabalho','Histórico de pagamentos associados à obra.',table(['Data','Funcionário','Valor','Estado','Ações'],state.wagePayments.filter(p=>p.entry&&(!projectId||p.project===projectId)).map(p=>`<tr><td>${fullDate(p.date)}</td><td>${esc(person(p.employee)?.name)}</td><td>${euro(p.amount)}</td><td>${badge(p.voided?'Anulado':'Pago')}</td><td>${p.voided?'':btn('Anular','voidPayment',false,p.id)}</td></tr>`)))+`<details class="notice"><summary>Pagamentos anteriores sem obra</summary><p>Os pagamentos sem registo associado continuam no apuramento geral e não são distribuídos automaticamente pelas obras. Consulte-os antes de efetuar novos pagamentos.</p></details>`;
+  }), 'labour-by-employee'))+(includePayments?labourPaymentsPanel(projectId):'');
 
 }
-function costBreakdown(projectId='',kind='material',from='',until='',statusValue='active'){
+function labourPaymentsPanel(projectId=''){
+  if(!admin())return '';
+  return panel('Pagamentos de trabalho','Histórico de pagamentos associados à obra.',table(['Data','Funcionário','Valor','Estado','Ações'],state.wagePayments.filter(p=>p.entry&&(!projectId||p.project===projectId)).map(p=>`<tr><td>${fullDate(p.date)}</td><td>${esc(person(p.employee)?.name)}</td><td>${euro(p.amount)}</td><td>${badge(p.voided?'Anulado':'Pago')}</td><td>${p.voided?'':btn('Anular','voidPayment',false,p.id)}</td></tr>`)))+`<details class="notice"><summary>Pagamentos anteriores sem obra</summary><p>Os pagamentos sem registo associado continuam no apuramento geral e não são distribuídos automaticamente pelas obras. Consulte-os antes de efetuar novos pagamentos.</p></details>`;
+}
+function costBreakdown(projectId='',kind='material',from='',until='',statusValue='active',tools=''){
   const rows=state.costs.filter(c=>(!projectId||c.project===projectId)&&c.kind===kind&&costInPeriod(c,from,until)&&(statusValue==='all'||(statusValue==='voided'?c.voided:!c.voided))).sort((a,b)=>b.date.localeCompare(a.date));
   const amount=money(rows.filter(c=>!c.voided).reduce((s,c)=>s+c.amount,0));
-  return panel(kind==='material'?'Materiais':'Outras despesas',`Custo registado ativo: ${euro(amount)}. Pagamento não apurado nesta secção.`,rows.length?table(['Data / obra','Descrição / categoria','Fornecedor / documento','Quantidade','Preço unitário','Custo registado','Estado','Ações'],rows.map(c=>`<tr><td>${day(c.date)}<small>${esc(worksite(c.project)?.name||'Custos gerais')}</small></td><td>${esc(c.description)}<small>${esc(c.category)}</small><small>${esc(c.note||'')}</small></td><td>${esc(c.supplier||'—')}<small>${esc(c.reference||'')}</small></td><td>${costNumber(c.quantity)} ${esc(c.unit)}</td><td>${euro(c.unitPrice)}</td><td>${euro(c.amount)}</td><td>${badge(c.voided?'Anulado':'Registado',c.voided?'gray':'')}<small>${esc(c.voidReason||'')}</small></td><td>${c.voided?'—':btn('Anular custo','void-cost',false,c.id)}</td></tr>`)):'<p class="empty">Sem movimentos neste período.</p>');
+  return panel(kind==='material'?'Materiais':'Outras despesas',`Custo registado ativo: ${euro(amount)}. Pagamento não apurado nesta secção.`,rows.length?table(['Data / obra','Descrição / categoria','Fornecedor / documento','Quantidade','Preço unitário','Custo registado','Estado','Ações'],rows.map(c=>`<tr><td>${day(c.date)}<small>${esc(worksite(c.project)?.name||'Custos gerais')}</small></td><td>${esc(c.description)}<small>${esc(c.category)}</small><small>${esc(c.note||'')}</small></td><td>${esc(c.supplier||'—')}<small>${esc(c.reference||'')}</small></td><td>${costNumber(c.quantity)} ${esc(c.unit)}</td><td>${euro(c.unitPrice)}</td><td>${euro(c.amount)}</td><td>${badge(c.voided?'Anulado':'Registado',c.voided?'gray':'')}<small>${esc(c.voidReason||'')}</small></td><td>${c.voided?'—':btn('Anular custo','void-cost',false,c.id)}</td></tr>`)):'<p class="empty">Sem movimentos neste período.</p>',tools);
 }
 function costPeriodSummary(project=costProject,from=costFrom,until=costUntil){return [...state.projects,...(!project&&state.costs.some(c=>c.project===null)?[{id:null}]:[])].filter(p=>!project||p.id===project).map(p=>{
   const rows=state.costs.filter(c=>c.project===p.id&&!c.voided&&costInPeriod(c,from,until));
@@ -51,8 +55,8 @@ function costsView(){
     monthPicker('custos',dateRangeFields('cost-from','cost-until',costFrom,costUntil))+`<div class="cost-filters">${costFilter('cost-project','Obra a consultar',[['','Todas as obras'],...state.projects.map(p=>[p.id,p.name])],costProject)}</div>${cards}`+
     panel('Custos por obra','Período selecionado; campos de data vazios incluem todas as datas. Anulações excluídas dos totais.',table(['Obra','Materiais','Despesas','Mão de obra','Total indicativo','Ações'],summaries.map(s=>`<tr><td><strong>${esc(worksite(s.project)?.name||'Custos gerais')}</strong><small>${esc(worksite(s.project)?.client)}</small></td><td>${euro(s.materials)}</td><td>${euro(s.expenses)}</td><td>${euro(s.labour)}</td><td><strong>${euro(s.total)}</strong></td><td>${btn('Ver contas','project-costs',false,s.project)}</td></tr>`)))+
     `<details class="notice cost-note info-disclosure"><summary>Informação</summary><div>Registe os custos finais de materiais e despesas, incluindo IVA quando aplicável. A mão de obra é calculada pela remuneração dos registos validados, sem encargos adicionais. O total é indicativo e não representa lucro, saldo de caixa ou tratamento fiscal do IVA. Registar uma despesa não regista o seu pagamento.</div></details>`+
-    `<div class="tabs" aria-label="Detalhe de custos">${[['labour','Funcionários'],['material','Materiais'],['expense','Outras despesas']].map(([id,label])=>`<button type="button" class="btn ${costTab===id?'selected':''}" data-cost-tab="${id}" aria-pressed="${costTab===id}">${label}</button>`).join('')}</div>`+
-    (costTab==='labour'?labourCostPanel(costProject,costFrom,costUntil):`<div class="toolbar">${costFilter('cost-status','Estado do custo',[['active','Ativos'],['voided','Anulados'],['all','Todos']],costStatus)}${btn('Exportar custos CSV','export-costs')}</div>`+costBreakdown(costProject,costTab,costFrom,costUntil,costStatus));
+    `<div class="section-stack cost-details"><div class="tabs" aria-label="Detalhe de custos">${[['labour','Funcionários'],['material','Materiais'],['expense','Outras despesas']].map(([id,label])=>`<button type="button" class="btn ${costTab===id?'selected':''}" data-cost-tab="${id}" aria-pressed="${costTab===id}">${label}</button>`).join('')}</div>`+
+    (costTab==='labour'?labourCostPanel(costProject,costFrom,costUntil):costBreakdown(costProject,costTab,costFrom,costUntil,costStatus,`<div class="cost-filters cost-table-controls">${btn('Exportar custos CSV','export-costs')}${costFilter('cost-status','Estado do custo',[['active','Ativos'],['voided','Anulados'],['all','Todos']],costStatus)}</div>`))+'</div>';
 }
 function costForm(kind,projectId=''){
   if(!state.projects.length)return toast('Crie primeiro uma obra para associar o custo.');
@@ -76,9 +80,20 @@ document.addEventListener('change',e=>{
 
 function inventoryView(){
   const lots=[...(state.inventory||[])].reverse();
-  return heading('Inventário','Materiais disponíveis para atribuir às obras.',btn('+ Entrada de material','stock-receive',true))+
+  const catalog=state.historicalImport?.Artigos||[];
+  return heading('Inventário','Materiais disponíveis para atribuir às obras.',btn('+ Entrada de material','stock-receive',true))+'<div class="section-stack">'+
     panel('Materiais em stock','Cada entrada conserva o seu preço de compra. A atribuição cria um custo de material na obra selecionada.',
-      lots.length?table(['Artigo','Entrada','Recebido','Disponível','Preço unitário','Ações'],lots.map(lot=>`<tr><td>${esc(lot.description)}</td><td>${fullDate(lot.date)}</td><td>${costNumber(lot.quantity)} ${esc(lot.unit)}</td><td>${costNumber(lot.available)} ${esc(lot.unit)}</td><td>${euro(lot.unitPrice)}</td><td>${lot.available>0?btn('Atribuir a obra','stock-issue',false,lot.id):'Esgotado'}</td></tr>`)):'<p class="empty">Ainda não há entradas de material.</p>');
+      searchableDirectory('inventario', {
+        label:'Pesquisar materiais em stock', placeholder:'Artigo ou unidade', noun:'entradas', rows:lots,
+        fields:lot=>[lot.description,lot.unit],
+        renderRows:rows=>table(['Artigo','Entrada','Recebido','Disponível','Preço unitário','Ações'],rows.map(lot=>`<tr><td>${esc(lot.description)}</td><td>${fullDate(lot.date)}</td><td>${costNumber(lot.quantity)} ${esc(lot.unit)}</td><td>${costNumber(lot.available)} ${esc(lot.unit)}</td><td>${euro(lot.unitPrice)}</td><td>${lot.available>0?btn('Atribuir a obra','stock-issue',false,lot.id):'Esgotado'}</td></tr>`))
+      }))+
+    panel('Artigos do sistema antigo','Catálogo importado sem quantidades de stock. Consulte as saídas históricas em Dados importados.',
+      searchableDirectory('artigos-importados', {
+        label:'Pesquisar artigos importados', placeholder:'Código, artigo ou tipo', noun:'artigos', rows:catalog,
+        fields:({values:v})=>[v[0],v[1],v[2]],
+        renderRows:rows=>table(['Código','Artigo','Tipo','Preço'],rows.map(({values:v})=>`<tr><td>${esc(v[0])}</td><td>${esc(v[1])}</td><td>${esc(v[2]||'—')}</td><td>${euro(Number(v[3])||0)}</td></tr>`))
+      }))+'</div>';
 }
 function inventoryForm(id){
   const lot=id&&state.inventory.find(item=>item.id===id);

@@ -20,11 +20,11 @@ test('autenticação real, autorização e persistência entre sessões',async t
       const draft=structuredClone(original);
       const first=applyImport(draft,admin,rows);
       assert.equal(first.errorCount,0);
-      assert.deepEqual(Object.values(first.summary).map(s=>s.created),[1,1,1,1]);
+      for(const [sheet,summary] of Object.entries(first.summary))assert.equal(summary.created,source[sheet]?1:0,sheet);
       assert.equal(draft.projects.at(-1).clientId,draft.clients.at(-1).id);
       assert.deepEqual(draft.projects.at(-1).employees,[draft.employees.at(-1).id]);
       assert.equal(draft.employees.at(-1).rate,12.5);
-      assert.deepEqual(Object.values(applyImport(draft,admin,rows).summary).map(s=>s.existing),[1,1,1,1]);
+      for(const [sheet,summary] of Object.entries(applyImport(draft,admin,rows).summary))assert.equal(summary.existing,source[sheet]?1:0,sheet);
       rows.Clientes[0].values[1]='Outro nome';
       assert.match(applyImport(draft,admin,rows).errors[0],/Clientes, linha 3.*dados diferentes/);
       rows.Equipas[0].values[1]='DESCONHECIDO';

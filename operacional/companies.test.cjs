@@ -22,6 +22,8 @@ test('empresas: login, isolamento de dados e anexos, credenciais próprias e pra
     await t.test('login encaminha para a empresa e mantém os perfis dos funcionários',async()=>{
       const first=await login(a,'lino'),second=await login(b,'empresa.b');assert.equal(first.status,200);assert.equal(second.status,200);assert.equal(first.body.user.company.id,'linorua');assert.equal(second.body.user.company.id,companyB.id);assert.equal(second.body.user.company.name,'Empresa B');
       assert.equal((await login(worker,'joao')).body.user.role,'worker');assert.equal((await state(a)).projects.length,3);assert.equal((await state(b)).projects.length,0);assert((await state(worker)).entries.every(r=>r.employee==='e2'));
+      assert.equal(first.body.user.company.estimateSimulator,true);
+      assert.equal(second.body.user.company.estimateSimulator,false);
     });
     await t.test('secções dos colaboradores são configuradas por empresa',async()=>{
       const original=(await state(b)).company.workerSections;

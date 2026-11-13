@@ -23,6 +23,10 @@ O segundo comando cria uma empresa vazia, uma conta de administrador e um perío
 
 ## Persistência e controlo
 
+Para testes em desenvolvimento, executar **`npm run dev:exemplos`**. Cria a empresa **Teste**, com os utilizadores `teste` (administrador), `teste.enc` (encarregado), `teste.joao` e `teste.rui` (colaboradores). As palavras-passe aleatórias ficam no ficheiro local `acessos.json`, no caminho indicado pelo comando, dentro de `operacional/data/` (excluído do Git). Repetir o comando conserva os dados, as alterações e os acessos; não repõe o cenário nem duplica registos. Recusa executar com `NODE_ENV=production`.
+
+Os exemplos usam nomes simples como **Obra 1**, **Cliente 1** e **Ana**. Incluem equipa, clientes, obras, horas aprovadas/pendentes/rejeitadas, correção, picagens, pagamentos à equipa, cobranças, recebimentos, materiais, despesas, pagamentos de custos, inventário e consumo, notas, um anexo, férias, planeamento e histórico mensal. Há movimentos no mês de criação para os filtros iniciais, além do cenário histórico de agosto a outubro de 2026; consultar outubro para explorar picagens, férias e correções. A criação dá dez anos de acesso de desenvolvimento. O simulador de orçamentos continua sujeito à restrição existente da empresa Lino Rua. As empresas Lino Rua e Santa Eugenia não são alteradas.
+
 - `operacional/data/lino.sqlite`: empresa Lino Rua, incluindo os dados já existentes.
 - `operacional/data/platform.sqlite`: registo de empresas e caminhos das suas bases.
 - `operacional/data/companies/<id>/company.sqlite`: base de cada nova empresa.

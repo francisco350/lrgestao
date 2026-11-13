@@ -17,7 +17,8 @@
     "future:test:browser": "node operacional/browser.test.cjs",
     "start": "node operacional/platform.cjs",
     "prototype:start": "node server.cjs",
-    "company": "node operacional/company-control.cjs"
+    "company": "node operacional/company-control.cjs",
+    "dev:exemplos": "node operacional/dev-company.cjs"
   },
   "devDependencies": {
     "playwright": "1.62.1"

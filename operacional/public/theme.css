@@ -178,6 +178,17 @@ input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 :root[data-theme="dark"] .settlement-paid { color: #a3e9b8; }
 :root[data-theme="dark"] .settlement-due { color: #ffb5ae; }
 :root .table-wrap td:is(.settlement-paid, .settlement-due) small { color: inherit; }
+.work-team-table {
+  max-height: min(32rem, 60vh);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.work-team-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-raised);
+}
 .work-team-table th:last-child, .work-team-table td:last-child { width: 1%; white-space: nowrap; }
 .work-team-table .work-detail { max-width: 220px; margin-top: 5px; white-space: normal; }
 .work-team-table .work-detail summary { width: fit-content; cursor: pointer; color: var(--muted); font-size: 10px; }

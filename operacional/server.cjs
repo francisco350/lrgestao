@@ -14,10 +14,12 @@ function createApplication({database=path.join(__dirname,'data','lino.sqlite'),o
   const db=openStore(database);const cookieName=production?'__Host-lino_session':'lino_session';let hashesInFlight=0,uploadsInFlight=0;const attachmentsDirectory=database+'.files';
   const workerSections=['resumo','ponto','trabalho','obras','planeamento','horas','pagamentos','ausencias','conta'];
   const lino=!companyId||companyId==='linorua';
+  // The local test fixture must exercise the simulator without accessing Lino's data.
+  const estimateSimulator=lino||(!production&&JSON.parse(db.prepare('SELECT document FROM business WHERE id=1').get()?.document||'{}').developmentFixture==='development-test-company-v1');
   function company(){
     const saved=db.prepare('SELECT sections FROM company_visibility WHERE id=1').get();
     return {id:companyId||'local',name:db.prepare('SELECT name FROM company_profile WHERE id=1').get().name,
-      workerSections:saved?JSON.parse(saved.sections):(lino?['ponto']:workerSections),automaticLunch:lino};
+      workerSections:saved?JSON.parse(saved.sections):(lino?['ponto']:workerSections),automaticLunch:lino,estimateSimulator};
   }
   const presentUser=row=>({...publicUser(row),company:company()});
   const prefix=companyId?companyId+'.':'';
@@ -91,7 +93,7 @@ function createApplication({database=path.join(__dirname,'data','lino.sqlite'),o
         }
         if(url.pathname==='/api/project-estimates'){
           requireAdmin(s);
-          if(!lino)D.fail('Sem acesso ao simulador.',403);
+          if(!estimateSimulator)D.fail('Sem acesso ao simulador.',403);
           if(req.method==='GET'){
             const id=url.searchParams.get('id');
             if(id){
@@ -130,7 +132,7 @@ function createApplication({database=path.join(__dirname,'data','lino.sqlite'),o
         }
         if(['/api/estimate-catalog','/api/estimate-catalog/edit','/api/estimate','/api/bathroom-estimate'].includes(url.pathname)){
           requireAdmin(s);
-          if(!lino)D.fail('Sem preçário para esta empresa.',403);
+          if(!estimateSimulator)D.fail('Sem preçário para esta empresa.',403);
           if(req.method==='GET'&&url.pathname==='/api/estimate-catalog')return json(res,200,Catalog.description(Catalog.activeCatalog(db)));
           if(req.method!=='POST')D.fail('Método não suportado.',405);
           const editing=url.pathname==='/api/estimate-catalog/edit';

@@ -1,5 +1,6 @@
 const crypto=require('node:crypto');
 const M=require('./model.cjs');
+const {ensureWorkEditable}=require('./receivables.cjs');
 const fail=(message,status=400)=>{throw Object.assign(Error(message),{status});};
 const dateFormat=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Lisbon',year:'numeric',month:'2-digit',day:'2-digit'});
 const timeFormat=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Lisbon',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
@@ -70,6 +71,7 @@ function apply(state,user,type,data,now,{dailyEntries,effective}){
         if((shift.revision||1)!==correction.baseRevision||shift.status!==correction.baseStatus)fail('O turno mudou desde o pedido. Recuse o pedido e confirme uma nova proposta.',409);
         const oldIds=new Set(shift.entryIds||[]);
         const oldRows=state.entries.filter(r=>oldIds.has(r.id));
+        for(const row of oldRows)ensureWorkEditable(state,row.id);
         if(oldRows.length!==oldIds.size||oldRows.some(r=>r.clockShiftId!==shift.id||r.status!=='approved'))fail('Os registos de origem foram alterados. Reveja o turno.',409);
         const rows=dailyEntries({...shift,...correction.proposed});
         if(!rows.length)fail('A proposta não contém trabalho válido.');

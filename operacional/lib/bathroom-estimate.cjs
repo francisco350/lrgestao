@@ -2,10 +2,27 @@
 
 const {rooms} = require('./estimate-catalog.cjs');
 
+function specificEstimate(catalog, work) {
+  const validQuantity = n => typeof n==='number' && Number.isFinite(n) && n>=0 && n<=100000 && /^\d+(\.\d{1,3})?$/.test(String(n));
+  if (!validQuantity(work.hours) || !Array.isArray(work.materials) || work.materials.length>100 ||
+      (!work.materials.length && !work.hours)) throw Error('Indique materiais ou horas de mão de obra válidas.');
+  const prices=new Map(catalog.items.map(item=>[item.id,item]));
+  const materials=work.materials.map(line=>{
+    const item=prices.get(line?.materialId);
+    if (!item || !validQuantity(line.quantity) || line.quantity===0) throw Error('Escolha o material e uma quantidade positiva com até três casas decimais.');
+    return {...item,quantity:line.quantity,totalCents:Math.round(Math.round(line.quantity*1000)*item.unitCents/1000)};
+  });
+  const materialsCents=materials.reduce((sum,item)=>sum+item.totalCents,0);
+  const labourCents=Math.round(Math.round(work.hours*1000)*catalog.hourlyCents/1000);
+  return {kind:'specific',version:catalog.version,hourlyCents:catalog.hourlyCents,materials,hours:work.hours,
+    materialsCents,labourCents,subtotalCents:materialsCents+labourCents};
+}
+
 function estimateProject(catalog, selections) {
   if (!Array.isArray(selections) || !selections.length || selections.length > 100) {
     throw Error('Inclua entre 1 e 100 linhas de divisões.');
   }
+  if (selections.length===1 && selections[0]?.kind==='specific') return specificEstimate(catalog,selections[0]);
   const lines = [];
   const prices = new Map(catalog.items.map(item=>[item.id,item]));
   let areaHundredths = 0, materialsExact = 0, labourExact = 0;

@@ -1,6 +1,52 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const H=require('./public/hours-model.js'),D=require('./lib/domain.cjs'),M=require('./lib/model.cjs');
 const filter={mode:'week',date:'2026-10-14',employee:'',project:''};
+test('mapa: período diário e navegação atravessam meses e anos',()=>{
+ assert.deepEqual(H.period('day','2026-12-31'),{mode:'day',from:'2026-12-31',until:'2026-12-31',days:['2026-12-31']});
+ assert.equal(H.step('day','2026-12-31',1),'2027-01-01');
+ assert.equal(H.step('day','2026-03-01',-1),'2026-02-28');
+ const report=H.build(fixture(),{...filter,mode:'day',date:'2026-10-12'});
+ assert(report.details.every(row=>row.date==='2026-10-12'));
+ assert.equal(report.daily.length,1);
+});
+test('mapa: intervalo personalizado filtra dias e CSV e preserva importações apenas no mês completo',()=>{
+ const state=fixture();
+ state.monthlyHistory=[{employee:'e1',project:'p1',month:'2026-10',totalHours:8}];
+ const report=H.build(state,{...filter,from:'2026-10-15',until:'2026-10-19'});
+ assert.equal(report.range.mode,'custom');
+ assert.equal(report.range.days.length,5);
+ assert.equal(report.totals.approved,80);
+ assert.equal(report.totals.pending,90);
+ assert.equal(report.imported,0);
+ assert(!report.details.some(row=>row.date<'2026-10-15'||row.date>'2026-10-19'));
+ assert(H.csv(report).includes('"2026-10-15";"2026-10-19"'));
+ assert.equal(H.build(state,{...filter,from:'2026-10-01',until:'2026-10-31'}).imported,480);
+ assert.throws(()=>H.build(state,{...filter,from:'2026-10-20',until:'2026-10-10'}),/intervalo/);
+});
+test('mapa: todas as datas inclui meses distintos, histórico e turnos, respeitando filtros e CSV',()=>{
+ const state=fixture();
+ state.entries.push({...state.entries[0],id:'past',date:'2025-12-01',minutes:45});
+ state.monthlyHistory=[{employee:'e1',project:'p1',month:'2025-11',totalHours:8},{employee:'e1',project:'p1',month:'2026-09',totalHours:4},{employee:'e2',project:'p2',month:'2026-09',totalHours:2}];
+ const all={...filter,from:'',until:''};
+ const report=H.build(state,all);
+ assert.equal(report.range.mode,'all');
+ assert.equal(report.totals.approved,635);
+ assert.equal(report.totals.pending,240);
+ assert.equal(report.imported,840);
+ assert.deepEqual(report.range.days,['2025-12-01','2026-10-12','2026-10-13','2026-10-15','2026-10-16','2026-10-19']);
+ assert.equal(report.daily.reduce((sum,row)=>sum+row.approved,0),635);
+ const single=H.build(state,{...all,employee:['e1'],project:['p1']});
+ assert.equal(single.totals.approved,495);assert.equal(single.imported,720);
+ assert(!single.summaryRows.some(row=>row.employee==='e2'||row.project==='p2'));
+ const csv=H.csv(single);assert(csv.includes('Horas importadas (HH:MM)'));assert(csv.includes('"12:00";"20:15"'));
+ assert(H.csv(single,'detail').includes('2025-12-01'));
+ assert.equal(H.build(state,{...all,status:['approved']}).imported,0);
+ assert.equal(H.build(state,{...all,status:['imported']}).details.length,0);
+ const empty=H.build({...state,entries:[],clockShifts:[],monthlyHistory:[]},all);
+ assert.equal(empty.summaryRows.length,0);assert.deepEqual(empty.range.days,[]);
+ assert.equal(H.build(state,{...filter,from:'2026-10-15',until:''}).totals.approved,80);
+ assert.equal(H.build(state,{...filter,from:'',until:'2025-12-31'}).totals.approved,45);
+});
 function fixture(){
  const entries=[
   {id:'a',employee:'e1',project:'p1',date:'2026-10-12',minutes:390,status:'approved',mode:'clock'},

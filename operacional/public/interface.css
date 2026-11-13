@@ -1,0 +1,163 @@
+/* Table geometry preserves the original rows and secondary lines. Only textual
+   identification columns yield width; amounts, states and commands stay whole. */
+.panel { --table-leading-inset: 22px; }
+@media (max-width: 760px) { .panel { --table-leading-inset: 17px; } }
+.table-wrap, .catalog-materials .table-wrap, .work-team-table {
+  max-height: min(var(--table-row-limit, 36rem), 65dvh);
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.table-wrap thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-raised); }
+.hours-grid thead th:first-child { z-index: 3; }
+.table-wrap:focus-visible { outline: 3px solid #c0a36a; outline-offset: -3px; }
+.table-scroll-note { margin: 0; padding: 10px 20px; color: var(--muted); font-size: 11px; line-height: 1.6; border-top: 1px solid var(--line); }
+.hours-block-title { margin: 0; padding: 12px 20px; color: var(--secondary); font-size: 13px; }
+.table-wrap td.table-text-expandable { position: relative; padding-inline-end: 28px; }
+.table-text-open {
+  position: absolute; inset-inline-end: 4px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; padding: 0; border: 1px solid var(--line);
+  border-radius: 4px; background: var(--surface-raised); color: var(--ink);
+  font-size: 12px; line-height: 1; cursor: pointer;
+}
+.table-text-open::after { content: '↗'; }
+.table-text-dialog { max-height: 85dvh; overflow-y: auto; }
+.table-text-dialog p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+
+@media screen {
+  .table-wrap table { width: 100%; table-layout: auto; }
+  .table-wrap tr > :is(th, td) { text-align: left; white-space: nowrap; overflow-wrap: normal; }
+  .table-wrap .badge { white-space: nowrap; flex-shrink: 0; }
+  .table-wrap .row-actions {
+    display: flex; width: max-content; flex-wrap: nowrap;
+    align-items: center; justify-content: flex-start; gap: 8px;
+  }
+  .table-wrap .row-actions .btn { flex: none; }
+  .table-wrap [data-column="actions"],
+  .table-wrap [data-column="amount"],
+  .table-wrap [data-column="status"] { width: 1%; }
+  .table-wrap tr > [data-column="actions"] { padding-inline-end: 16px; }
+}
+@media screen and (min-width: 761px) {
+  .table-wrap :is(th, td) { padding-inline: clamp(4px, .65vw, 12px); }
+  .table-wrap th[data-column="identity"] { width: 34%; }
+  .table-wrap th[data-column="text"] { width: 17%; }
+  .table-wrap td:is([data-column="identity"], [data-column="text"]) {
+    max-width: 0; overflow: hidden; text-overflow: ellipsis;
+  }
+  .table-wrap td:is([data-column="identity"], [data-column="text"]) :is(strong, small, .movement-link) {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .table-wrap td .work-detail[open] { white-space: normal; }
+  .table-wrap .payroll-summary th:first-child { width: 28%; }
+  .table-wrap .payroll-summary th:not(:first-child) { width: 18%; }
+  .table-wrap .labour-by-employee th:nth-child(-n+2) { width: 50%; }
+  .hours-grid :is(th, td), .hours-grid tr > :first-child { min-width: 0; }
+}
+/* The existing ten-column import ledger needs compact headings on narrow PCs. */
+@media screen and (min-width: 761px) and (max-width: 1100px) {
+  .table-wrap table:has(thead th:nth-child(10)) thead th {
+    font-family: "Arial Narrow", Arial, sans-serif;
+    font-size: 11px; letter-spacing: normal; text-transform: none; padding-inline: 3px;
+  }
+}
+/* Obras retains its approved 71px rows and project/client hierarchy. */
+@media screen and (min-width: 761px) {
+  #directory-results-obras tbody td { height: 71px; padding-block: 16px; vertical-align: middle; }
+  #directory-results-obras .row-actions { gap: 6px; }
+  #directory-results-obras .row-actions .btn { padding: 10px; }
+  #directory-results-obras td:nth-child(4) { padding-inline-end: 16px; }
+}
+
+/* Approved phone presentation when a table cannot fit its protected columns. */
+@media screen and (max-width: 760px) {
+  .mobile-records > table, .mobile-records :is(tbody, tfoot) { display: block; width: 100%; min-width: 0; }
+  .mobile-records thead { position: absolute; clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; }
+  .mobile-records :is(tbody, tfoot) tr {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px; padding: 16px; border-bottom: 1px solid var(--line);
+  }
+  .table-wrap.mobile-records tr > :is(td, th) {
+    display: block; position: static; border: 0; padding: 0; margin: 0;
+    height: auto; width: auto; min-width: 0; max-width: none; white-space: normal;
+  }
+  .mobile-records :is(tbody, tfoot) tr > :first-child,
+  .mobile-records [data-column="actions"],
+  .mobile-records td:is([colspan], :has(button, a, input, details)) { grid-column: 1 / -1; }
+  .mobile-records [data-field-label]:not([data-field-label=""])::before {
+    content: attr(data-field-label); display: block; margin-bottom: 4px;
+    color: var(--muted); font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .table-wrap.mobile-records [data-column="amount"],
+  .table-wrap.mobile-records [data-column="status"] { white-space: nowrap; }
+  #directory-results-obras .mobile-records tbody td:first-child::before { content: none; }
+  #directory-results-obras .mobile-records tbody strong { font-size: 15px; }
+}
+@media print {
+  .table-wrap, .catalog-materials .table-wrap, .work-team-table { max-height: none; overflow: visible; }
+  .table-wrap thead th { position: static; }
+  .table-scroll-note { display: none; }
+  .table-text-open { display: none; }
+}
+
+.directory-search .directory-count { color: var(--muted); font-size: 12px; }
+
+/* Keep filter and search controls at the same usable height across modules. */
+
+:is(.range-field, .cost-filters, .attachment-toolbar, .toolbar) select,
+
+.range-field input,
+
+.directory-search input,
+
+.directory-search .btn { min-height: 44px; }
+
+.report-select-input, .report-period-field select { height: 44px; }
+
+:is(.cost-filters, .attachment-toolbar, .toolbar) .range-field { min-width: min(180px, 100%); gap: 7px; font-size: 11px; }
+
+.report-page .panel-head:has(.table-period) { flex-wrap: wrap; align-items: center; }
+.report-page .panel-head:has(.table-period) > div:first-child { flex: 1 1 18rem; }
+.table-period { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-inline-start: auto; color: var(--secondary); font-size: 12px; }
+.table-period-buttons { display: flex; gap: 4px; }
+.table-period-buttons .btn { min-width: 34px; min-height: 34px; padding: 4px 9px; }
+.table-period-buttons [data-report-step]:not([data-report-step="0"]) { font-size: 18px; }
+@media (max-width: 600px) { .table-period { width: 100%; justify-content: space-between; } }
+
+/* Give the tables a full-width workspace on small landscape displays. */
+@media screen and (min-width: 761px) and (max-width: 950px) {
+  .sidebar { position: static; width: auto; padding: 12px 20px; }
+  .sidebar :is(.workspace,.nav-label,.sidebar-bottom) { display: none; }
+  .sidebar nav { display: flex; align-items: end; overflow-x: auto; margin-top: 10px; }
+  .sidebar .nav-group { flex: none; grid-auto-flow: column; }
+  .sidebar .nav-group-title { grid-column: 1/-1; grid-row: 1; margin: 0 10px; }
+  .sidebar .nav-group a { grid-row: 2; }
+  .sidebar nav a { padding: 8px 10px; white-space: nowrap; }
+  .main { margin-left: 0; }
+}
+
+@media screen and (min-width: 951px) and (max-width: 1100px) {
+  body:has(#finance-costs) .sidebar { position: static; width: auto; padding: 12px 20px; }
+  body:has(#finance-costs) .sidebar :is(.workspace,.nav-label,.sidebar-bottom) { display: none; }
+  body:has(#finance-costs) .sidebar nav { display: flex; align-items: end; overflow-x: auto; margin-top: 10px; }
+  body:has(#finance-costs) .sidebar .nav-group { flex: none; grid-auto-flow: column; }
+  body:has(#finance-costs) .sidebar .nav-group-title { grid-column: 1/-1; grid-row: 1; margin: 0 10px; }
+  body:has(#finance-costs) .sidebar .nav-group a { grid-row: 2; }
+  body:has(#finance-costs) .sidebar nav a { padding: 8px 10px; white-space: nowrap; }
+  body:has(#finance-costs) .main { margin-left: 0; }
+}
+
+/* Match the panel heading's left edge without changing the other columns,
+   vertical cell padding or the reserved action margin. */
+@media screen {
+  .panel .table-wrap:not(.mobile-records) tr > :first-child {
+    padding-inline-start: var(--table-leading-inset);
+  }
+  .panel :is(.toolbar, .directory-search, .hours-block-title) {
+    padding-inline-start: var(--table-leading-inset);
+  }
+  .panel .mobile-records :is(tbody, tfoot) tr {
+    padding-inline-start: var(--table-leading-inset);
+  }
+}
+

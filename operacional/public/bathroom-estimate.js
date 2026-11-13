@@ -17,11 +17,18 @@ async function openEstimateWorkspace() {
 
 function showEstimateForm(host, catalog, draft) {
   const getRoom = id => catalog.rooms.find(room => room.id === id);
-  host.innerHTML = '<div data-simulation>'+panel('Divisões da obra','Agrupe divisões com a mesma área ou adicione linhas para áreas diferentes.', `
+  host.innerHTML = '<div data-simulation>'+panel('Trabalhos da obra','Escolha como pretende calcular o orçamento.', `
     <form id="project-estimate" class="estimate-form">
+      <label class="field">Tipo de orçamento<select name="mode"><option value="rooms">Remodelação de divisões</option><option value="specific">Trabalhos específicos</option></select></label>
+      <fieldset class="estimate-mode" data-rooms>
       <div class="estimate-rooms"></div>
       <div class="actions"><button type="button" class="btn" data-add>Adicionar divisão</button>
-      <button type="button" class="btn" data-map>Carregar obra de exemplo</button></div>
+      <button type="button" class="btn" data-map>Carregar obra de exemplo</button></div></fieldset>
+      <fieldset class="estimate-mode" data-specific hidden disabled>
+        <div data-material-lines></div>
+        <button type="button" class="btn" data-add-material>Adicionar material</button>
+        <label class="field estimate-note">Horas de mão de obra (opcional)<input type="number" name="hours" min="0" max="100000" step="0.001" placeholder="0"></label>
+      </fieldset>
       <label class="field estimate-note">Outros trabalhos por orçamentar (opcional)
         <input name="pending" maxlength="400" placeholder="Ex. remoção de azulejos"></label>
       <button class="btn primary" type="submit">Calcular estimativa</button>
@@ -58,6 +65,47 @@ function showEstimateForm(host, catalog, draft) {
   const errorBox = form.querySelector('[role="alert"]');
   let revision = 0;
   const invalidate = () => { revision++; result.replaceChildren(); errorBox.textContent = ''; };
+  const mode=form.elements.mode;
+  const specific=form.querySelector('[data-specific]');
+  const roomFields=form.querySelector('[data-rooms]');
+  const materialLines=form.querySelector('[data-material-lines]');
+  const roomOptions=catalog.rooms.map(room=>`<option value="${esc(room.id)}">${esc(room.name)}</option>`).join('');
+  function materialOptions(room) {
+    const ids=new Set(catalog.compositions.filter(c=>c.room===room).flatMap(c=>c.materials.map(m=>m.materialId)));
+    return catalog.items.filter(item=>!room || ids.has(item.id)).map(i=>`<option value="${esc(i.id)}">${esc(i.name)} · ${euro(i.unitCents/100)}/${esc(i.unit)}</option>`).join('');
+  }
+  function addMaterial(initial) {
+    const line=document.createElement('div');
+    line.className='catalog-material-row';
+    line.innerHTML=`<label class="field">Divisão (opcional)<select data-room><option value="">Todas as divisões</option>${roomOptions}</select></label>
+      <label class="field">Material<select data-material required></select></label>
+      <label class="field">Quantidade<input type="number" min="0.001" max="100000" step="0.001" required></label>
+      <button class="btn" type="button">Retirar</button>`;
+    const room=line.querySelector('[data-room]');
+    const material=line.querySelector('[data-material]');
+    function filter(selected) {
+      material.innerHTML='<option value="">Escolher material</option>'+materialOptions(room.value);
+      material.value=selected;
+      if (!material.value) material.selectedIndex=0;
+    }
+    room.value=initial?.room??'';
+    filter(initial?.materialId??'');
+    room.onchange=()=>{filter(material.value);invalidate();};
+    line.querySelector('input').value=initial?.quantity??1;
+    line.querySelector('button').onclick=()=>{line.remove();invalidate();};
+    materialLines.append(line);
+  }
+  const readMaterials=()=>[...materialLines.children].map(line=>({room:line.querySelector('[data-room]').value,materialId:line.querySelector('[data-material]').value,quantity:line.querySelector('input').value}));
+  form.querySelector('[data-add-material]').onclick=()=>{addMaterial();invalidate();materialLines.lastChild.querySelector('select').focus();};
+  mode.onchange=()=>{
+    specific.hidden=specific.disabled=mode.value!=='specific';
+    roomFields.hidden=roomFields.disabled=!specific.disabled;
+    invalidate();
+  };
+  mode.value=draft?.mode??'rooms';
+  mode.onchange();
+  draft?.materials?.forEach(addMaterial);
+  form.elements.hours.value=draft?.hours??'';
 
   function row(initial) {
     const item = document.createElement('fieldset');
@@ -112,7 +160,9 @@ function showEstimateForm(host, catalog, draft) {
   }
   form.onsubmit = async event => {
     event.preventDefault();
-    const selections = readSelections().map(s=>({room:s.room,trades:s.trades,area:Math.round(Number(s.area)*100)*Number(s.copies)/100}));
+    const selections = mode.value==='specific'
+      ? [{kind:'specific',hours:Number(form.elements.hours.value),materials:readMaterials().map(m=>({...m,quantity:Number(m.quantity)}))}]
+      : readSelections().map(s=>({room:s.room,trades:s.trades,area:Math.round(Number(s.area)*100)*Number(s.copies)/100}));
     if (!selections.length) { errorBox.textContent = 'Adicione pelo menos uma divisão.'; return; }
     const button = form.querySelector('[type="submit"]');
     button.disabled = true;
@@ -141,7 +191,8 @@ function showEstimateForm(host, catalog, draft) {
   };
   const upload = host.querySelector('#estimate-import');
   function applyCatalog(next) {
-    showEstimateForm(host,next,{selections:readSelections(),note:form.elements.pending.value,settings:true});
+    showEstimateForm(host,next,{selections:readSelections(),note:form.elements.pending.value,settings:true,
+      mode:mode.value,materials:readMaterials(),hours:form.elements.hours.value});
     manage.focus();
   }
   bindEstimateEditor(settings, catalog, async change=>{
@@ -214,6 +265,13 @@ async function showSavedEstimates(host,project='') {
 
 function estimateResult(result, pending, getRoom, title) {
   const price = cents => euro(cents/100);
+  if(result.kind==='specific'){
+    const rows=result.materials.map(i=>`<tr><td>${esc(i.name)}</td><td>${i.quantity.toLocaleString('pt-PT')} ${esc(i.unit)}</td><td>${price(i.unitCents)}</td><td>${price(i.totalCents)}</td></tr>`);
+    if(result.hours)rows.push(`<tr><td>Mão de obra</td><td>${result.hours.toLocaleString('pt-PT')} h</td><td>${price(result.hourlyCents)}</td><td>${price(result.labourCents)}</td></tr>`);
+    rows.push(`<tr><td colspan="3">Subtotal indicativo</td><td><strong>${price(result.subtotalCents)}</strong></td></tr>`);
+    return panel(esc(title||'Trabalhos específicos'),'Materiais provisórios. IVA por rever para esta obra.',
+      table(['Trabalho ou material','Quantidade','Preço unitário','Subtotal'],rows)+(pending?`<p class="estimate-pending"><strong>Por orçamentar</strong> · ${esc(pending)}</p>`:''));
+  }
   const number = n => n.toLocaleString('pt-PT',{maximumFractionDigits:3});
   const label = line => esc(getRoom(line.room).name + (line.id === 'geral' ? '' : ' · ' + line.name));
   const rows = result.lines.map(line=>`<tr><td>${label(line)}</td><td>${number(line.area)} m²</td><td>${number(line.hours)} h</td>

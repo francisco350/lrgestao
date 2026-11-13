@@ -106,6 +106,12 @@ details.info-disclosure{display:block}
   grid-template-columns: minmax(0, 1fr);
   gap: 24px;
 }
+.cost-details > :is(.panel, .notice) { margin: 0; }
+.cost-details > .tabs { flex-wrap: wrap; }
+.cost-details .panel-head:has(.cost-table-controls) { flex-wrap: wrap; }
+.cost-details .panel-head:has(.cost-table-controls) > div:first-child { flex: 1 1 18rem; min-width: 0; }
+.cost-details .cost-table-controls { margin: 0 0 0 auto; justify-content: flex-end; gap: 12px; max-width: 100%; }
+.cost-details .cost-table-controls .range-field { min-width: 140px; }
 .form-stack {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -120,3 +126,59 @@ details.info-disclosure{display:block}
 }
 .import-body { padding-block-start: 0; }
 .import-body > p:first-child { margin-block-start: 0; }
+.estimate-mode{border:0;padding:0;margin:16px 0;min-width:0}.estimate-mode [data-add-material]{margin-top:12px}
+[data-material-lines] .catalog-material-row .field:first-child{flex:1 1 150px}
+[data-material-lines] .catalog-material-row .field:nth-child(2){flex:2 1 230px}
+[data-material-lines] .catalog-material-row .field:nth-child(3){flex:0 1 100px;min-width:0}
+
+/* Report filters share the field proportions and spacing of the project accounts. */
+.report-page > :is(.panel,.stats,.notice,.hours-alert) { margin: 0; min-width: 0; }
+.report-page > .report-date-navigation { margin: 0; }
+.report-page .hours-filter-panel,.report-page .work-filter-panel { padding: 16px 20px; overflow: visible; }
+.report-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 24px; min-width: 0; }
+.report-period-controls { display: flex; align-items: end; gap: 6px; margin-inline-start: auto; min-width: 0; }
+.report-period-field { display: grid; gap: 5px; width: 210px; min-width: 0; }
+.report-period-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 24px; font-size: 11px; color: var(--secondary); }
+.report-period-controls .range-field { gap: 5px; font-size: 11px; line-height: 24px; }
+.report-period-controls .range-field input { line-height: normal; }
+.report-filters .field,.report-field-label { font-size: 11px; color: var(--secondary); }
+.report-filters .field input,.report-filters .field select,.report-period-field select,.report-select-input {
+  width: 100%; min-width: 0; height: 36px; padding: 7px 10px;
+  border: 1px solid var(--line); border-radius: 7px;
+  background: var(--surface-input); color: var(--ink); font: inherit; font-size: 12px;
+}
+.report-period-navigation { display: flex; align-items: center; justify-content: space-between; gap: 4px; height: 24px; }
+.report-period-navigation .btn { min-width: 24px; min-height: 0; height: 24px; font-size: 16px; padding: 0 6px; }
+.report-period-navigation .report-current { font-size: 11px; }
+.report-period-controls .period-date-range { margin-inline-start: auto; flex-basis: auto; }
+.report-period-controls .period-date-range input { width: 120px; height: 36px; padding-inline: 6px; }
+.report-selection-controls { display: grid; flex: 1; grid-template-columns: minmax(140px,190px) minmax(140px,190px) minmax(100px,125px); gap: 8px; align-items: end; min-width: 0; }
+.report-select { position: relative; display: grid; gap: 5px; min-width: 0; }
+.report-field-label { display: flex; align-items: center; height: 24px; }
+.report-select:has([aria-expanded="true"]) { z-index: 6; }
+.report-select-input { display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left; cursor: pointer; }
+.report-select-input > span:first-child { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.report-select-arrow { width: 7px; height: 7px; flex: none; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: translateY(-2px) rotate(45deg); }
+.report-select-input[aria-expanded="true"] { border-color: var(--green); }
+.report-select-input[aria-expanded="true"] .report-select-arrow { transform: translateY(2px) rotate(225deg); }
+.report-select-options { position: absolute; inset: calc(100% + 6px) 0 auto; z-index: 5; min-width: 210px; max-height: 260px; overflow-y: auto; overscroll-behavior: contain; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 8px 24px #172f2926; }
+.report-select-options label { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 5px; font-size: 13px; line-height: 1.5; cursor: pointer; color: var(--ink); }
+.report-select-options label:hover,.report-select-options label:focus-within { background: var(--row-hover); }
+.report-select-options label:has(:checked) { background: var(--row-alternate); }
+.report-select-options input { width: 16px; height: 16px; min-height: 0; flex: none; margin: 0; accent-color: var(--green); }
+.report-select-options p { padding: 10px; font-size: 13px; color: var(--muted); }
+.report-filter-actions { display: flex; flex-basis: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 10px; min-width: 0; }
+.report-filter-actions > span,.work-filter-panel > small { font-size: 12px; color: var(--muted); }
+.report-filter-actions .actions { flex-wrap: wrap; gap: 10px; }
+.work-filter-panel > small { display: block; margin-top: 8px; }
+/* Wrap only on narrow surfaces; desktop keeps filters and dates on one line. */
+@media (max-width: 760px) {
+  .report-page .hours-filter-panel,.report-page .work-filter-panel { padding: 14px; }
+  .report-selection-controls { flex: 1 1 100%; width: 100%; grid-template-columns: minmax(0,1fr) minmax(0,1fr) 80px; gap: 8px; }
+    .report-period-controls { width: 100%; flex-wrap: wrap; }
+  .report-period-controls .period-date-range { width: 100%; justify-content: flex-end; margin-inline-start: auto; }
+  .report-period-controls .period-date-range input { width: 100%; }
+  .report-period-controls .period-date-range .range-field { flex: 1; }
+  .report-select-options { min-width: 0; width: min(230px,calc(100vw - 70px)); }
+  .report-select:nth-child(3) .report-select-options { left: auto; right: 0; }
+}

@@ -5,6 +5,88 @@ function state(){return {projects:[{id:'p',employees:[]},{id:'other',employees:[
 const cost={project:'p',kind:'expense',description:'Gasóleo',category:'Transporte',date:'2026-10-12',unitPrice:100,settlement:'unpaid'};
 const apply=(s,type,data,user=admin)=>C.apply(s,user,type,data,helpers);
 
+test('por receber no fecho agrega horas validadas por obra e categoria e respeita a data de recebimento',()=>{
+  const s=state(),R=require('./lib/receivables.cjs');
+  s.projects[0].saleRates={official:2500,helper:1000};
+  s.entries=[
+    {id:'h',project:'p',category:'Ajudante',status:'approved',date:'2026-10-15',minutes:600},
+    {id:'o',project:'p',category:'Oficial',status:'approved',date:'2026-09-14',minutes:90},
+    {id:'future',project:'p',category:'Oficial',status:'approved',date:'2026-12-01',minutes:60},
+    {id:'other',project:'other',category:'Oficial',status:'approved',date:'2026-10-18',minutes:120},
+    {id:'pending',project:'p',category:'Ajudante',status:'pending',date:'2026-10-18',minutes:120}
+  ];
+  const receipt={project:'p',role:'helper',date:'2026-11-03',method:'Transferência'};
+  R.apply(s,admin,'saleReceipt',{...receipt,minutes:420},helpers);
+  const detail=(project,until)=>F.accountDetails(s,'receivable',project,'2026-10-01',until);
+  const oct=detail('p','2026-10-31');
+  assert.deepEqual(oct.map(r=>[r.description,r.minutes,r.amount]),[['Ajudantes',600,100],['Oficiais',90,37.5]]);
+  assert.equal(F.summary(s,'p','','2026-10-31').receivable,137.5);
+  assert.equal(F.summary(s,'p','','2026-11-30').receivable,67.5);
+  assert.equal(detail(undefined,'2026-10-31').find(r=>r.project==='other').unpriced,120);
+  s.projects[1].saleRates={official:2000};
+  assert.equal(detail(undefined,'2026-10-31').reduce((n,r)=>n+r.amount,0),177.5);
+  Object.assign(s.receipts[0],{voided:true,voidedAt:'2026-12-01T12:00:00Z'});
+  assert.equal(F.summary(s,'p','','2026-11-30').receivable,67.5);
+  assert.equal(F.summary(s,'p','','2026-12-31').receivable,162.5);
+});
+
+test('cobrança com horas mantém um único saldo e liquida as horas antes da parcela adicional',()=>{
+  const s=state(),R=require('./lib/receivables.cjs'),p=s.projects[0];
+  p.clientId='client';p.saleRates={official:2500,helper:1000};s.clients=[{id:'client',active:true}];
+  s.entries=[
+    {id:'helper',project:'p',category:'Ajudante',status:'approved',date:'2026-10-01',minutes:120},
+    {id:'official',project:'p',category:'Oficial',status:'approved',date:'2026-10-02',minutes:60}
+  ];
+  const save=(type,data)=>R.apply(s,admin,type,data,helpers);
+  const charge={project:'p',amount:65,description:'Trabalho e deslocação',due:'2026-10-31',workEntries:['official','helper']};
+  assert.throws(()=>save('charge',{...charge,amount:44.99}));
+  assert.throws(()=>save('charge',{...charge,workEntries:['official','official']}));
+  save('charge',charge);const id=s.charges[0].id;
+  assert.throws(()=>save('charge',charge));assert.throws(()=>R.ensureWorkEditable(s,'helper'));
+  assert.throws(()=>save('saleReceipt',{project:'p',role:'helper',minutes:60,date:'2026-11-03',method:'Numerário'}));
+  p.saleRates.helper=2000;
+  assert.equal(F.summary(s,'p','','2026-10-30').receivable,45);
+  assert.equal(F.summary(s,'p','','2026-10-31').receivable,65);
+  save('receipt',{charge:id,date:'2026-11-03',amount:32.5,method:'Numerário'});
+  assert.deepEqual(F.accountDetails(s,'receivable','p','','2026-11-30').map(r=>[r.description,r.amount,r.minutes]),
+    [['Oficiais',12.5,30],['Trabalho e deslocação',20,undefined]]);
+  assert.equal(F.summary(s,'p','','2026-10-31').receivable,65);
+  assert.equal(F.summary(s,'p','','2026-11-30').received,32.5);
+  save('receipt',{charge:id,date:'2026-11-04',amount:32.5,method:'Transferência'});
+  assert.equal(F.summary(s,'p','','2026-11-30').receivable,0);
+  for(const r of s.receipts)save('voidReceipt',{id:r.id,reason:'Correção'});
+  assert.equal(F.summary(s,'p').receivable,65);
+  save('voidCharge',{id,reason:'Correção'});R.ensureWorkEditable(s,'helper');
+  assert.equal(F.summary(s,'p').receivable,65); // Tarifa atual de ajudante: 2 h × 20 €.
+});
+
+test('recebimento parcial de horas preserva preço, período, saldo da cobrança e histórico',()=>{
+  const s=state(),R=require('./lib/receivables.cjs');
+  s.projects[0].saleRates={official:2500,helper:1500};s.projects[0].clientId='client';
+  s.entries=[{id:'a',project:'p',category:'Oficial',date:'2026-10-01',minutes:240,status:'approved'},{id:'b',project:'p',category:'Oficial',date:'2026-10-02',minutes:360,status:'approved'}];
+  s.charges=[{id:'c',project:'p',amount:500,due:'2026-10-01'}];
+  const data={project:'p',role:'official',from:'2026-10-01',until:'2026-10-31',date:'2026-11-03',minutes:420,charge:'c',method:'Numerário'};
+  const save=(updates={})=>R.apply(s,admin,'saleReceipt',{...data,...updates},helpers);
+  assert.throws(()=>save({date:'2026-10-01'}));assert.throws(()=>save({role:'helper'}));
+  save();
+  // A later receipt explicitly links 7 hours to the October charge.
+  // October still owes the entire charge plus the three hours outside it.
+  assert.equal(F.summary(s,'p','','2026-10-31').receivable,575);
+  assert.equal(F.summary(s,'p','','2026-11-30').receivable,400);
+  assert.deepEqual(s.receipts[0].sale.allocations,[{entry:'a',minutes:240,cents:10000},{entry:'b',minutes:180,cents:7500}]);
+  assert.equal(F.chargeBalance(s,s.charges[0]),325);
+  assert.equal(F.summary(s,'p','2026-11-01','2026-11-30').received,175);
+  assert.equal(F.summary(s,'p','2026-10-01','2026-10-31').received,0);
+  s.projects[0].saleRates.official=3000;
+  assert.throws(()=>save({minutes:181}));save({minutes:180});
+  assert.deepEqual(s.receipts.map(r=>r.amount),[175,90]);
+  assert.equal(F.saleWork(s,'p','2026-10-02','2026-10-02')[0].paidCents,16500);
+  assert.throws(()=>R.ensureWorkEditable(s,'a'));
+  R.apply(s,admin,'voidReceipt',{id:s.receipts[0].id,reason:'Correção'},helpers);
+  assert.equal(F.saleWork(s,'p')[0].available,240);R.ensureWorkEditable(s,'a');
+  assert.equal(F.chargeBalance(s,s.charges[0]),410);assert.equal(s.wagePayments.length,0);
+});
+
 test('lucro e saldo excluem movimentos anteriores e posteriores ao intervalo',()=>{
   const s=state();s.projects[0].budget=99999;
   s.costs=[{id:'old',project:'p',kind:'material',amount:200,date:'2026-09-01',paymentTracked:true},{id:'current',project:'p',kind:'material',amount:60,date:'2026-10-01',paymentTracked:true},{id:'general',project:null,kind:'expense',amount:50,date:'2026-10-31',paymentTracked:true},{id:'future',project:'p',kind:'expense',amount:999,date:'2026-11-01',paymentTracked:true}];

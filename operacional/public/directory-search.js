@@ -27,22 +27,24 @@ function searchableDirectory(key, { label, placeholder, noun, rows, fields, rend
   directoryViews[key] = { noun, rows, fields, renderRows };
   const query = directoryQueries[key] || '';
   const result = directoryResult(key);
-  return `<div class="directory-search" role="search" aria-label="${esc(label)}"><label class="field" for="directory-search-input">${esc(label)}<input type="search" id="directory-search-input" data-directory="${key}" placeholder="${esc(placeholder)}" value="${esc(query)}" autocomplete="off" aria-controls="directory-results"></label><button type="button" class="btn" data-clear-directory="${key}" ${query ? '' : 'disabled'}>Limpar pesquisa</button><span class="directory-count" role="status" aria-live="polite" aria-atomic="true">${result.count}</span></div><div id="directory-results">${result.content}</div>`;
+  return `<div class="directory-search" role="search" aria-label="${esc(label)}"><label class="field" for="directory-search-${key}">${esc(label)}<input type="search" id="directory-search-${key}" data-directory="${key}" placeholder="${esc(placeholder)}" value="${esc(query)}" autocomplete="off" aria-controls="directory-results-${key}"></label><button type="button" class="btn" data-clear-directory="${key}" ${query ? '' : 'disabled'}>Limpar pesquisa</button><span class="directory-count" role="status" aria-live="polite" aria-atomic="true">${result.count}</span></div><div id="directory-results-${key}">${result.content}</div>`;
 }
 function updateDirectory(input) {
   const key = input.dataset.directory;
   directoryQueries[key] = input.value;
   const result = directoryResult(key);
-  document.querySelector('#directory-results').innerHTML = result.content;
-  document.querySelector('.directory-count').textContent = result.count;
-  document.querySelector('[data-clear-directory]').disabled = !input.value;
+  const toolbar = input.closest('.directory-search');
+  document.getElementById(`directory-results-${key}`).innerHTML = result.content;
+  toolbar.querySelector('.directory-count').textContent = result.count;
+  toolbar.querySelector('[data-clear-directory]').disabled = !input.value;
 }
 document.addEventListener('input', event => {
   if (event.target.matches('[data-directory]')) updateDirectory(event.target);
 });
 document.addEventListener('click', event => {
-  if (!event.target.closest('[data-clear-directory]')) return;
-  const input = document.querySelector('#directory-search-input');
+  const button = event.target.closest('[data-clear-directory]');
+  if (!button) return;
+  const input = button.closest('.directory-search').querySelector('input[type=search]');
   input.value = '';
   updateDirectory(input);
   input.focus();

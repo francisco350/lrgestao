@@ -27,13 +27,65 @@ const {createApplication}=require('./server.cjs'),{seed}=require('./seed.cjs'),{
       assert.equal(await row.getByRole('button',{name:'Ver pendentes',exact:true}).count(),1);
     };
     await p.goto(origin+'/#obra/'+pending.project);await p.locator('.project-detail').waitFor();await checkPendingActions();await checkLabour();
-    await p.getByRole('link',{name:'Contas da obra',exact:true}).click();await p.getByRole('button',{name:'Toda a obra',exact:true}).click();await checkPendingActions();await checkLabour();
-    assert.equal(await p.locator('.project-monthly > .panel').last().locator('h2').innerText(),'Entradas e saídas por método');
-    assert.deepEqual(await p.locator('#finance-movements th').allTextContents(),['Data','Movimento / descrição','Valor','Método / observação','Estado','Ações']);
+    await p.getByRole('link',{name:'Contas da obra',exact:true}).click();await p.getByRole('button',{name:'Toda a obra',exact:true}).click();await p.locator('[data-finance-tab="labour"]').click();await checkPendingActions();await checkLabour();
+    const salePanel=p.locator('.panel').filter({has:p.getByRole('heading',{name:'Mão de obra a cobrar ao cliente',exact:true})});
+    assert.equal(await salePanel.getByRole('button',{name:'Definir preço'}).count(),2);
+    const before=readState(app.db);
+    await salePanel.getByRole('button',{name:'Editar preços'}).click();
+    await p.getByLabel('Oficial (€/hora)',{exact:true}).fill('25');
+    await p.getByLabel('Ajudante (€/hora)',{exact:true}).fill('15');
+    await p.getByRole('button',{name:'Guardar',exact:true}).click();
+    await p.locator('dialog').waitFor({state:'hidden'});
+    await p.reload();
+    await p.getByRole('button',{name:'Toda a obra',exact:true}).click();
+    const saved=readState(app.db);
+    assert.deepEqual(saved.projects.find(project=>project.id===pending.project).saleRates,{official:2500,helper:1500});
+    for(const key of ['charges','receipts','wagePayments','entries'])assert.deepEqual(saved[key],before[key]);
+    assert(saved.projects.filter(project=>project.id!==pending.project).every(project=>!project.saleRates));
+    for(const [category,label,rate] of [['Oficial','Oficiais',25],['Ajudante','Ajudantes',15]]){
+      const minutes=before.entries.filter(r=>r.project===pending.project&&r.status==='approved'&&r.category===category).reduce((sum,r)=>sum+r.minutes,0);
+      const value=await salePanel.getByRole('row').filter({hasText:label}).locator('td').nth(3).innerText();
+      assert.equal(value,await p.evaluate(amount=>euro(amount),Math.round(minutes*rate*100/60)/100));
+    }
+    const officialRow=salePanel.getByRole('row').filter({hasText:'Oficiais'});
+    await officialRow.getByRole('button',{name:'Registar recebimento do cliente'}).click();
+    await p.getByLabel('Horas inteiras').fill('7');
+    await p.getByLabel('Método do recebimento').selectOption('Numerário');
+    await p.getByRole('button',{name:'Guardar',exact:true}).click();
+    await p.locator('dialog').waitFor({state:'hidden'});
+    await p.reload();await p.getByRole('button',{name:'Toda a obra',exact:true}).click();
+    assert((await officialRow.locator('td').nth(4).innerText()).includes('175,00'));
+    assert((await officialRow.locator('td').nth(4).innerText()).includes('7h'));
+    const afterSale=readState(app.db);
+    assert.equal(afterSale.receipts.length,before.receipts.length+1);
+    assert.deepEqual(afterSale.wagePayments,before.wagePayments);
+    await p.locator('[data-finance-tab="movements"]').click();
+    const movement=p.locator('#finance-movements tr').filter({hasText:'Trabalho de oficiais'});
+    await movement.getByRole('button',{name:'Anular movimento'}).click();
+    await p.locator('dialog [name="reason"]').fill('Verificação');
+    await p.getByRole('button',{name:'Guardar',exact:true}).click();
+    await p.locator('dialog').waitFor({state:'hidden'});
+    assert((await officialRow.locator('td').nth(4).innerText()).includes('0h'));
+    const receivableCard=p.locator('[data-finance-card="receivable"]');
+    const beforeBilling=await receivableCard.locator('.stat-value').innerText();
+    await p.getByRole('button',{name:'+ Cobrança',exact:true}).click();
+    await p.getByLabel('Descrição da cobrança',{exact:true}).fill('Horas incluídas no teste');
+    await p.getByText('Incluir horas validadas nesta cobrança',{exact:true}).click();
+    await p.locator('[name="workEntry"]').first().check();
+    assert(Number(await p.getByLabel('Valor da cobrança (€)',{exact:true}).inputValue())>0);
+    await p.getByRole('button',{name:'Guardar',exact:true}).click();await p.locator('dialog').waitFor({state:'hidden'});
+    assert.equal(await receivableCard.locator('.stat-value').innerText(),beforeBilling);
+    await p.locator('[data-finance-tab="charges"]').click();
+    const linkedCharge=p.locator('#finance-charges tr').filter({hasText:'Horas incluídas no teste'});
+    await linkedCharge.getByRole('button',{name:'Anular cobrança'}).click();
+    await p.locator('dialog [name="reason"]').fill('Verificação');
+    await p.getByRole('button',{name:'Guardar',exact:true}).click();await p.locator('dialog').waitFor({state:'hidden'});
+    assert.equal(await p.locator('#finance-movements > .panel').last().locator('h2').textContent(),'Entradas e saídas por método');
+    assert.deepEqual(await p.locator('#finance-movements > .panel').filter({has:p.locator('h2').filter({hasText:'Movimentos financeiros da obra'})}).locator('th').allTextContents(),['Data','Movimento / descrição','Valor','Método / observação','Estado','Ações']);
     const tones=await p.evaluate(()=>Object.values(clockLabels).map(label=>badgeTone(label)));
     assert.deepEqual(tones,['blue','purple','amber','green','red']);
     await p.goto(origin+'/#custos');await p.getByRole('button',{name:'Todas as datas',exact:true}).click();await checkLabour();
-    await p.goto(origin+'/#trabalho');await p.getByRole('button',{name:'Limpar filtros',exact:true}).click();await checkPendingActions();
+    await p.goto(origin+'/#trabalho');await p.getByRole('button',{name:'Limpar filtros',exact:true}).click();await p.getByRole('button',{name:'Todas as datas',exact:true}).click();await checkPendingActions();
     await p.goto(origin+'/#obra/o1');await p.getByRole('link',{name:'Contas da obra',exact:true}).click();await p.getByRole('heading',{name:'Contas da obra'}).waitFor();await p.getByRole('button',{name:'Este mês',exact:true}).click();assert.equal(await p.getByLabel('Mês de consulta',{exact:true}).inputValue(),month);
     await p.getByLabel('Mês de consulta',{exact:true}).fill(prevMonth);
     await p.getByRole('button',{name:'+ Despesa',exact:true}).click();assert.equal(await p.locator('#form select[name="project"]').count(),0);
@@ -41,6 +93,7 @@ const {createApplication}=require('./server.cjs'),{seed}=require('./seed.cjs'),{
     assert.equal(await p.getByLabel('Data do custo',{exact:true}).inputValue(),previous);
     await p.getByLabel('Estado do pagamento',{exact:true}).selectOption('partial');await p.getByLabel('Valor já pago (€)',{exact:true}).fill('40');await p.getByLabel('Método do pagamento',{exact:true}).selectOption('Numerário');
     await p.getByRole('button',{name:'Guardar',exact:true}).click();await p.locator('dialog').waitFor({state:'hidden'});
+    await p.locator('[data-finance-tab="costs"]').click();
     const costs=p.locator('.panel').filter({has:p.getByRole('heading',{name:'Materiais e despesas desta obra',exact:true})}),row=costs.getByRole('row').filter({hasText:'Gasóleo teste mensal'});
     assert((await row.innerText()).includes('60,00'));await row.getByRole('button',{name:'Registar pagamento',exact:true}).click();await p.getByLabel('Data do pagamento',{exact:true}).fill(today);
     await p.getByRole('button',{name:'Guardar',exact:true}).click();await p.locator('dialog').waitFor({state:'hidden'});assert((await row.innerText()).includes('Parcial'));
@@ -52,10 +105,10 @@ const {createApplication}=require('./server.cjs'),{seed}=require('./seed.cjs'),{
     const own=await p.evaluate(()=>ProjectFinance.summary(state,'o1',financeRange.from,financeRange.until));
     assert.equal(own.paid,40);assert.equal(own.due,60);assert(own.methods.find(r=>r.method==='Numerário').received>=50);
     await p.getByRole('button',{name:'Este mês',exact:true}).click();const current=await p.evaluate(()=>ProjectFinance.summary(state,'o1',financeRange.from,financeRange.until));assert.equal(current.paid,60);
-    assert.equal(await costs.getByText('Gasóleo teste mensal',{exact:true}).count(),0);assert((await p.locator('.panel').filter({has:p.getByRole('heading',{name:'Cobranças e recebimentos desta obra',exact:true})}).getByRole('row').filter({hasText:'Cobrança teste mensal'}).innerText()).includes('100,00'));
+    assert.equal(await costs.getByText('Gasóleo teste mensal',{exact:true}).count(),0);await p.locator('[data-finance-tab="charges"]').click();assert((await p.locator('.panel').filter({has:p.getByRole('heading',{name:'Cobranças e recebimentos desta obra',exact:true})}).getByRole('row').filter({hasText:'Cobrança teste mensal'}).innerText()).includes('100,00'));
     await p.getByRole('button',{name:'+ Material',exact:true}).click();await p.getByLabel('Descrição do material',{exact:true}).fill('Cimento teste por pagar');await p.getByLabel('Custo unitário final (€)',{exact:true}).fill('5');await p.getByLabel('Quantidade',{exact:true}).fill('10');
-    await p.getByRole('button',{name:'Guardar',exact:true}).click();await p.locator('dialog').waitFor({state:'hidden'});await costs.getByRole('row').filter({hasText:'Cimento teste por pagar'}).getByText('Por pagar',{exact:true}).waitFor();
-    await p.reload();await p.getByRole('heading',{name:'Contas da obra'}).waitFor();assert.equal(await costs.getByText('Cimento teste por pagar',{exact:true}).count(),1);
+    await p.getByRole('button',{name:'Guardar',exact:true}).click();await p.locator('dialog').waitFor({state:'hidden'});await p.locator('[data-finance-tab="costs"]').click();await costs.getByRole('row').filter({hasText:'Cimento teste por pagar'}).getByText('Por pagar',{exact:true}).waitFor();
+    await p.reload();await p.getByRole('heading',{name:'Contas da obra'}).waitFor();await p.locator('[data-finance-tab="costs"]').click();assert.equal(await costs.getByText('Cimento teste por pagar',{exact:true}).count(),1);
     // Every entry point opens the same accounts, preserving the selected period.
     await p.getByLabel('Mês de consulta',{exact:true}).fill(prevMonth);
     await p.getByRole('link',{name:'Ficha e equipa',exact:true}).click();
@@ -71,6 +124,15 @@ const {createApplication}=require('./server.cjs'),{seed}=require('./seed.cjs'),{
         const detail=p.getByRole('dialog');
         assert.equal(await detail.locator('.finance-detail-total strong').innerText(),total);
         const metric=await card.getAttribute('data-finance-card');
+        if(metric==='receivable'){
+          const categories=detail.getByRole('region',{name:'Horas por receber'});
+          const expected=await p.evaluate(()=>{
+            const rows=ProjectFinance.accountDetails(state,'receivable',document.querySelector('#finance-project').value||undefined,financeRange.from,financeRange.until);
+            return ['Oficiais','Ajudantes'].map(label=>hours(rows.filter(r=>r.description===label).reduce((n,r)=>n+(r.minutes||0),0)));
+          });
+          for(const [index,label] of ['Oficiais','Ajudantes'].entries())
+            assert.equal(await categories.locator('dl div').filter({has:p.getByText(label,{exact:true})}).locator('dd strong').innerText(),expected[index]);
+        }
         const descriptions={receivable:'Cobrança teste mensal',received:'Cobrança teste mensal',due:'Cimento teste por pagar',paid:'Gasóleo teste mensal',profit:'Cimento teste por pagar',balance:'Gasóleo teste mensal'};
         const description=descriptions[metric];
         assert(await detail.getByText(description,{exact:true}).first().isVisible());
@@ -109,7 +171,7 @@ const {createApplication}=require('./server.cjs'),{seed}=require('./seed.cjs'),{
     await p.getByLabel('Início do período',{exact:true}).fill(previous);await p.getByLabel('Fim do período',{exact:true}).fill(today);
     const custom=await p.evaluate(()=>ProjectFinance.summary(state,'o1',financeRange.from,financeRange.until));assert.equal(custom.paid,100);
     await p.getByRole('button',{name:'Este mês',exact:true}).click();
-    await p.getByRole('button',{name:'Recebimentos',exact:true}).click();assert(await p.locator('#finance-charges').isVisible());
+    await p.getByRole('button',{name:'Cobranças e recebimentos',exact:true}).click();assert(await p.locator('#finance-charges').isVisible());
     const output=path.join(os.tmpdir(),'lino-project-finance-screenshots');fs.mkdirSync(output,{recursive:true});
     for(const theme of ['light','dark']){
       await p.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);

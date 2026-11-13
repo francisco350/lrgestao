@@ -1,0 +1,28 @@
+.sidebar-drag-edge { display: none; }
+.sidebar-workspace-heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.sidebar-restore-button {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 34px; height: 34px; padding: 0; border: 1px solid var(--line); border-radius: 7px;
+  background: transparent; color: var(--ink);
+}
+.sidebar-restore-button:hover { background: var(--surface-raised); }
+@media print { .sidebar-restore-button { display: none; } }
+@media screen and (min-width: 951px) {
+  #root { --sidebar-full-width: 240px; --sidebar-visible-width: var(--sidebar-full-width); }
+  /* Keep the left-hand content anchored; only clip the panel's right edge. */
+  .sidebar { clip-path: inset(0 calc(var(--sidebar-full-width) - var(--sidebar-visible-width)) 0 0); }
+  .main { margin-left: var(--sidebar-visible-width); }
+  /* Equal space on either side of the restore button, only while the sidebar is hidden. */
+  .sidebar-is-hidden .topbar { padding-left: 16px; }
+  .sidebar-is-hidden .sidebar-workspace-heading { gap: 16px; }
+  .sidebar-drag-edge {
+    display: block; position: fixed; top: 0; bottom: 0;
+    left: calc(var(--sidebar-visible-width) - 5px); width: 10px; z-index: 6;
+    cursor: ew-resize; touch-action: none; background: transparent;
+  }
+  .sidebar-drag-edge:focus-visible { outline: 1px solid #777; outline-offset: -4px; }
+  body.sidebar-drag-active, body.sidebar-drag-active * { cursor: ew-resize !important; user-select: none !important; }
+}
+@media screen and (min-width: 951px) and (max-width: 1150px) {
+  #root { --sidebar-full-width: 205px; }
+}
